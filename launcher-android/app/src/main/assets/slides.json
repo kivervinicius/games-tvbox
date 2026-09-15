@@ -4,10 +4,10 @@
   "overlayOpacity": 70,
   "slides": [
     {
-      "id": "kalel-kath",
-      "image": "kalel-kath.png",
-      "title": "KALEL E KATH",
-      "caption": "Jogos nos unem sempre"
+      "id": "welcome",
+      "image": "retro.png",
+      "title": "JOGOS RETRO",
+      "caption": "Clássicos prontos para jogar"
     },
     {
       "id": "corrida",

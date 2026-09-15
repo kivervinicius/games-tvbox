@@ -1,7 +1,7 @@
 $root = Split-Path $PSScriptRoot -Parent
 $manifest = Join-Path $root 'app\src\main\AndroidManifest.xml'
 $activity = Join-Path $root 'app\src\main\java\com\kiver\fireretro\MainActivity.java'
-$asset = Join-Path $root 'app\src\main\res\drawable-nodpi\kalel_katherine_menu.png'
+$asset = Join-Path $root 'app\src\main\res\drawable-nodpi\jogos_retro_banner.png'
 $banner = Join-Path $root 'app\src\main\res\drawable-nodpi\jogos_retro_banner.png'
 $homeIcon = Join-Path $root 'app\src\main\res\drawable-nodpi\fireretro_home_icon_v2.png'
 $gamesAsset = Join-Path $root 'app\src\main\assets\games.json'
@@ -13,7 +13,7 @@ $themeTest = Join-Path $PSScriptRoot 'ThemeStateTest.java'
 $buildScript = Join-Path $root 'scripts\Build-FireRetro.ps1'
 if (-not (Test-Path $manifest)) { throw 'Manifest is missing' }
 if (-not (Test-Path $activity)) { throw 'MainActivity is missing' }
-if (-not (Test-Path $asset)) { throw 'Personalized artwork is missing' }
+if (-not (Test-Path $asset)) { throw 'Default launcher artwork is missing' }
 if (-not (Test-Path $banner)) { throw 'The widescreen Fire TV banner is missing' }
 if (-not (Test-Path $homeIcon)) { throw 'The dedicated Fire TV home icon is missing' }
 if (-not (Test-Path $gamesAsset)) { throw 'Embedded games list is missing' }
@@ -114,7 +114,7 @@ foreach ($required in @('DisplayMetrics','responsiveColumns','headerHeight','scr
     if ($source -notmatch [regex]::Escape($required)) { throw "Responsive layout is missing $required" }
 }
 if ($source -notmatch 'panel\.setOrientation\(LinearLayout\.VERTICAL\)') { throw 'Section titles must sit above their cards' }
-if ($source -match 'Jogos do Kalel e da Katherine') { throw 'Header title text should be hidden' }
+if ($source -match 'Jogos do usuário') { throw 'Header title text should be hidden' }
 foreach ($required in @('setOnKeyListener','KEYCODE_BACK','scrollTo')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Home navigation is missing $required" }
 }

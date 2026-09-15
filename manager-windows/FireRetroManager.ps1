@@ -118,7 +118,7 @@ function Save-CoverImage {
 function Get-DefaultThemeSlides {
     $assetRoot = Join-Path $script:ManagerRoot 'launcher-android\app\src\main\assets\slides'
     $defaults = @(
-        @{ Image = 'kalel-kath.png'; Title = 'KALEL E KATH'; Caption = 'Jogos nos unem sempre' }
+        @{ Image = 'retro.png'; Title = 'JOGOS RETRO'; Caption = 'Clássicos prontos para jogar' }
         @{ Image = 'corrida.png'; Title = 'HORA DA CORRIDA'; Caption = 'Escolha um jogo e divirta-se' }
         @{ Image = 'aventura.png'; Title = 'MUNDOS PARA EXPLORAR'; Caption = 'Aventura para toda a família' }
         @{ Image = 'retro.png'; Title = 'JOGOS RETRO'; Caption = 'Clássicos prontos para jogar' }

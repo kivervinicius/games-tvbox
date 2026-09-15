@@ -15,6 +15,14 @@ Com ele você pode:
 
 → [Comece pelo Quick Start](docs/quick-start.md) · [Veja a demonstração](docs/assets/screenshots/launcher-interface.png) · [Leia o manual completo](docs/index.md)
 
+## Demonstração visual
+
+[![Interface do Jogos Retro](docs/assets/screenshots/launcher-interface.png)](https://github.com/kivervinicius/games-tvbox/raw/refs/heads/main/docs/assets/videos/games-tvbox-interactive-demo.mp4)
+
+▶ [Assistir ao vídeo interativo](https://github.com/kivervinicius/games-tvbox/raw/refs/heads/main/docs/assets/videos/games-tvbox-interactive-demo.mp4) · [Ver todas as screenshots](docs/assets/screenshots/)
+
+O vídeo mostra a navegação pelo controle, a troca de slides e plataformas, a seleção de um jogo e o retorno ao launcher.
+
 ## O que este produto melhora?
 
 | Antes / problema | Com o Games TV Box |

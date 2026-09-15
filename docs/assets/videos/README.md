@@ -1,6 +1,6 @@
 # Vídeos demonstrativos
 
-O vídeo publicado está em [`games-tvbox-demo.mp4`](games-tvbox-demo.mp4). Para produzir uma nova gravação:
+O vídeo interativo publicado está em [`games-tvbox-interactive-demo.mp4`](games-tvbox-interactive-demo.mp4). Para produzir uma nova gravação:
 
 1. deixe o Fire TV em uma conta e biblioteca de demonstração;
 2. remova notificações, endereços IP e nomes pessoais;

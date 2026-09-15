@@ -10,6 +10,6 @@
 | CLI independente | 0 | 0 | N/A |
 | Banco / Docker | 0 | 0 | N/A |
 | Mídia real revisada | 4 screenshots | 4 | 100% |
-| Vídeo publicado | 1 planejado | 0 | 0%; gravação requer revisão externa |
+| Vídeo publicado | 1 | 1 | 100% |
 
-A cobertura mede o que existe no produto, não funcionalidades imaginadas. O vídeo permanece pendente por segurança de privacidade; o roteiro e o processo de atualização estão documentados.
+A cobertura mede o que existe no produto, não funcionalidades imaginadas. O vídeo publicado é uma gravação curta do launcher instalado; o roteiro para substituí-lo por uma demonstração mais longa também está documentado.

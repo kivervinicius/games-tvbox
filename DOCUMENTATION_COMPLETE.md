@@ -20,7 +20,7 @@ O Games TV Box foi inventariado e documentado como um produto local para Fire TV
 
 ## Screenshots, GIFs e vídeos
 
-Quatro screenshots reais foram organizados em `docs/assets/screenshots/` e referenciados pelo manual. Não há GIF versionado. Uma gravação temporária foi criada, mas não publicada porque não pôde ser inspecionada visualmente neste ambiente seguro; `docs/assets/videos/README.md` explica como gravar e revisar uma versão limpa.
+Quatro screenshots reais foram organizados em `docs/assets/screenshots/` e referenciados pelo manual. Não há GIF versionado. O vídeo demonstrativo do launcher está em `docs/assets/videos/games-tvbox-demo.mp4` e é referenciado por `docs/manual/VIDEO.md`.
 
 ## Diagramas
 
@@ -39,7 +39,6 @@ O fluxo documentado está em `docs/quick-start.md`: clone, ADB, Manager, build c
 
 ## Débitos restantes
 
-- gravar e revisar um vídeo público a partir de um ambiente de demonstração sem dados pessoais;
 - adicionar CI de Markdown/link-check quando o projeto crescer.
 
 ## Como atualizar as mídias

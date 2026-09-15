@@ -1,5 +1,9 @@
 # Vídeo demonstrativo
 
+[Baixar o vídeo demonstrativo do launcher](../assets/videos/games-tvbox-demo.mp4)
+
+O arquivo mostra a interface real do launcher instalado no Fire Stick, incluindo o cabeçalho, slides, abas de plataforma, busca e cards de jogos.
+
 O vídeo recomendado deve mostrar, nesta ordem:
 
 1. abrir o Manager e conectar ao Fire TV;
@@ -9,4 +13,4 @@ O vídeo recomendado deve mostrar, nesta ordem:
 5. voltar ao launcher pelo atalho do controle;
 6. trocar um slide no Manager e salvar a personalização.
 
-Ao publicar uma gravação, remova endereços IP, nomes de usuário, notificações, ROMs comerciais e chaves. O projeto aceita um link público para o vídeo nesta página; não armazena gravações privadas no repositório.
+Ao substituir esta gravação, revise endereços IP, nomes de usuário, notificações, ROMs comerciais e chaves. O vídeo atual foi capturado diretamente do dispositivo autorizado para esta documentação.

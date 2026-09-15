@@ -476,14 +476,10 @@ public class MainActivity extends Activity {
 
     private List<Game> readGames() {
         games.clear();
-        try { InputStream stream = getAssets().open("games.json"); parseGames(new BufferedReader(new InputStreamReader(stream, "UTF-8"))); stream.close(); return games; } catch (Exception ignored) { }
-        try { parseGames(new BufferedReader(new FileReader(new File(PLAYLIST)))); } catch (Exception ignored) { }
+        for (CatalogStore.CatalogGame catalogGame : CatalogStore.load(this, new File("/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json"))) {
+            games.add(new Game(catalogGame.label, catalogGame.path, catalogGame.corePath, catalogGame.platform, catalogGame.image));
+        }
         return games;
-    }
-    private void parseGames(BufferedReader reader) throws Exception {
-        StringBuilder text = new StringBuilder(); String line; while ((line = reader.readLine()) != null) text.append(line); reader.close();
-        JSONArray items = new JSONObject(text.toString()).optJSONArray("items");
-        if (items != null) for (int i = 0; i < items.length(); i++) { JSONObject item = items.getJSONObject(i); String path = item.optString("path", ""); if (!path.isEmpty()) games.add(new Game(item.optString("label", "Jogo"), path, item.optString("core_path"), item.optString("platform", "Outros"), item.optString("image", ""))); }
     }
     private void readTheme() {
         slides.clear(); File customTheme = new File(THEME_DIRECTORY, "slides.json");

@@ -10,6 +10,7 @@ $stateSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\LauncherSt
 $stateTest = Join-Path $PSScriptRoot 'LauncherStateTest.java'
 $themeSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeState.java'
 $themeTest = Join-Path $PSScriptRoot 'ThemeStateTest.java'
+$catalogTest = Join-Path $PSScriptRoot 'catalog-store.tests.ps1'
 $buildScript = Join-Path $root 'scripts\Build-FireRetro.ps1'
 if (-not (Test-Path $manifest)) { throw 'Manifest is missing' }
 if (-not (Test-Path $activity)) { throw 'MainActivity is missing' }
@@ -18,6 +19,8 @@ if (-not (Test-Path $banner)) { throw 'The widescreen Fire TV banner is missing'
 if (-not (Test-Path $homeIcon)) { throw 'The dedicated Fire TV home icon is missing' }
 if (-not (Test-Path $gamesAsset)) { throw 'Embedded games list is missing' }
 if (-not (Test-Path $buildScript)) { throw 'Repeatable Android build script is missing' }
+& pwsh -NoProfile -File $catalogTest
+if ($LASTEXITCODE -ne 0) { throw 'Catalog store contract failed' }
 $buildScriptText = Get-Content $buildScript -Raw
 foreach ($required in @('aapt2.exe', 'd8.bat', 'zipalign.exe', 'apksigner.bat')) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { throw "Build script is missing $required" }

@@ -26,10 +26,14 @@ foreach ($bad in @('https://user:pass@example.org/x','https://localhost/x','http
 }
 $legal.description='Private C:\Users\someone\games and 10.0.0.1'
 Assert (-not (Export-PublicCatalog @($legal)).items[0].description) 'Private data in free text must be removed.'
-foreach ($privateText in @('/var/lib/games/game','Stored under /opt/library/game','/mnt/archive','games/private/game','../library/game','~/.config/game','%2Fvar%2Flib%2Fgames','Folder: \library\game')) {
+foreach ($privateText in @('/var/lib/games/game','Stored under /opt/library/game','/mnt/archive','games/private/game','../library/game','~/.config/game','%2Fvar%2Flib%2Fgames','%252Fvar%252Flib','C%253A%255CUsers','%25252Fopt%25252Flibrary','Folder: \library\game')) {
     $legal.description=$privateText
     Assert (-not (Export-PublicCatalog @($legal)).items[0].description) 'Absolute, relative and encoded local paths must be removed from public free text.'
 }
+$deeplyEncoded='/var/lib/games'
+for ($round=0; $round -lt 12; $round++) { $deeplyEncoded=[Uri]::EscapeDataString($deeplyEncoded) }
+Assert (-not (Get-PublicCatalogText $deeplyEncoded)) 'Encoding deeper than the decoding limit must be rejected.'
+Assert ((Get-PublicCatalogText 'A demo with 100% original artwork') -eq 'A demo with 100% original artwork') 'Ordinary percent signs must remain valid text.'
 $tempRoot=Join-Path ([IO.Path]::GetTempPath()) ('github-catalog-test-'+[guid]::NewGuid().ToString('N'))
 $prior=$env:LOCALAPPDATA
 try {

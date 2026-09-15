@@ -30,9 +30,18 @@ function Get-PublicCatalogText {
     $text = ([string]$Value).Trim()
     # Free-text fields never need file separators. Reject them conservatively,
     # including percent-encoded paths, instead of guessing private root names.
-    $decoded = [Uri]::UnescapeDataString($text)
+    if ($text.Length -gt $MaxLength) { return '' }
+    $decoded = $text
+    $stable = $false
+    for ($round = 0; $round -lt 8; $round++) {
+        $next = [Uri]::UnescapeDataString($decoded)
+        if ($next -ceq $decoded) { $stable = $true; break }
+        $decoded = $next
+    }
+    # Reject excessive nesting instead of accepting a still-encoded path.
+    if (-not $stable) { return '' }
     if ($decoded.Contains('/') -or $decoded.Contains('\')) { return '' }
-    if ($text.Length -gt $MaxLength -or $text -match '(?i)(?:[a-z]:[\\/]|\\\\|/(?:sdcard|data|home|users|storage)/|https?://|\b(?:\d{1,3}\.){3}\d{1,3}\b|gh[pousr]_|github_pat_|(?:token|password|secret|authorization|api[_ -]?key)\s*[:=])') { return '' }
+    if ($decoded -match '(?i)(?:[a-z]:[\\/]|\\\\|/(?:sdcard|data|home|users|storage)/|https?://|\b(?:\d{1,3}\.){3}\d{1,3}\b|gh[pousr]_|github_pat_|(?:token|password|secret|authorization|api[_ -]?key)\s*[:=])') { return '' }
     return $text
 }
 

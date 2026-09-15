@@ -28,6 +28,18 @@ try {
 
     $invalidCover = Download-CoverToCache -Url 'file:///not-a-network-cover.png' -GameId 'sonic'
     if ($null -ne $invalidCover) { throw 'Cover downloads must reject non-HTTP URLs.' }
+
+    Set-StrictMode -Version Latest
+    $fallbackMetadata = Get-GameMetadataFallback -Game ([pscustomobject]@{ label='Fallback'; path='/sdcard/roms/nes/Fallback.nes' })
+    foreach ($tags in @(@(), @('ação'), @('ação','arcade'))) {
+        $normalized = ConvertTo-NormalizedGameMetadata -Response ([pscustomobject]@{ title='HTTP title'; tags=$tags }) -Fallback $fallbackMetadata
+        if (@($normalized.tags).Count -ne @($tags).Count) { throw 'Metadata normalization must retain zero, one and many tags under StrictMode.' }
+    }
+    $sparse = ConvertTo-NormalizedGameMetadata -Response ([pscustomobject]@{ title='Sparse response' }) -Fallback $fallbackMetadata
+    if ($sparse.label -ne 'Sparse response' -or $null -eq $sparse.tags) { throw 'Sparse metadata responses must use safe fallback values under StrictMode.' }
+    $httpResponse = '{ "title":"Online title", "tags":["demo"] }' | ConvertFrom-Json
+    $online = ConvertTo-NormalizedGameMetadata -Response $httpResponse -Fallback $fallbackMetadata
+    if ($online.label -ne 'Online title' -or @($online.tags).Count -ne 1) { throw 'A valid HTTP metadata response body must not silently fall back.' }
 } finally {
     $env:LOCALAPPDATA = $originalLocalAppData
     if (Test-Path -LiteralPath $metadataTestCache) { Remove-Item -LiteralPath $metadataTestCache -Recurse -Force }
@@ -134,6 +146,34 @@ try {
     if ([IO.Path]::GetFileName($pushCall[3]) -ne 'games.json') { throw 'Catalog sync must use the generated games.json file.' }
 } finally {
     if (Test-Path -LiteralPath $script:CacheRoot) { Remove-Item -LiteralPath $script:CacheRoot -Recurse -Force }
+}
+
+$localSyncRoot = Join-Path ([IO.Path]::GetTempPath()) ('FireRetroManager-LocalSyncTest-' + [Guid]::NewGuid().ToString('N'))
+try {
+    New-Item -ItemType Directory -Path (Join-Path $localSyncRoot 'nes') -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $localSyncRoot 'nes/New Game.nes') -Value 'new game' -Encoding utf8
+    $script:Settings.RomFolder = $localSyncRoot
+    $script:CacheRoot = Join-Path $localSyncRoot 'cache'
+    New-Item -ItemType Directory -Path (Join-Path $script:CacheRoot 'covers') -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $script:CacheRoot 'covers/new-cover.png') -Value 'cover' -Encoding utf8
+    $script:AdbCalls.Clear()
+    function Invoke-Adb {
+        param([string[]]$Arguments)
+        [void]$script:AdbCalls.Add(@($Arguments))
+        if ($Arguments -contains 'test') { return [pscustomobject]@{ ExitCode=1; Output=''; Error='missing' } }
+        return [pscustomobject]@{ ExitCode=0; Output='ok'; Error='' }
+    }
+    $sync = Sync-CatalogToFireStick -Serial 'fake:5555' -Catalog @()
+    if ($sync.ExitCode -ne 0) { throw 'Dynamic local catalog sync must succeed with simulated ADB.' }
+    $calls = (($script:AdbCalls | ForEach-Object { $_ -join ' ' }) -join "`n")
+    if ($calls -notmatch [regex]::Escape('test -e /sdcard/roms/nes/New Game.nes')) { throw 'Sync must check remote ROM existence before copying.' }
+    if ($calls -notmatch [regex]::Escape('push') -or $calls -notmatch [regex]::Escape('/sdcard/roms/nes/New Game.nes')) { throw 'Sync must copy newly scanned local ROMs to the Fire Stick.' }
+    if ($calls -notmatch [regex]::Escape($script:RemoteCoverRoot)) { throw 'Sync must upload downloaded local covers to the external cover directory.' }
+    $jsonCall = @($script:AdbCalls | Where-Object { ($_ -join ' ') -match 'catalog/games\.json' -and $_ -contains 'push' })[-1]
+    $json = Get-Content -LiteralPath $jsonCall[3] -Raw
+    if ($json -match [regex]::Escape($localSyncRoot) -or $json -match [regex]::Escape($script:CacheRoot)) { throw 'Synchronized JSON must not expose Windows or cache paths.' }
+} finally {
+    if (Test-Path -LiteralPath $localSyncRoot) { Remove-Item -LiteralPath $localSyncRoot -Recurse -Force }
 }
 
 Write-Output 'PASS: Catalog inventory, merge, simulated ADB sync, and non-destructive contract'

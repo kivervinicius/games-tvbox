@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
     private static final String RETROARCH = "com.retroarch.ra32";
     private static final String RETROARCH_CONFIG = "/sdcard/Android/data/com.retroarch.ra32/files/retroarch.cfg";
     private static final String THEME_DIRECTORY = "/sdcard/Android/data/com.kiver.fireretro/files/theme";
+    private static final String COVER_DIRECTORY = "/sdcard/Android/data/com.kiver.fireretro/files/covers";
     private static final String PREFS = "fireretro_state";
     private static final String LAST_GAME = "last_game";
     private static final String LAST_SLIDE = "last_slide";
@@ -373,8 +374,13 @@ public class MainActivity extends Activity {
         FrameLayout coverArea = new FrameLayout(this);
         coverArea.setBackground(panelBackground(0xFF0D214A, 0xFF386DB2, scaled(1), scaled(11)));
         ImageView cover = new ImageView(this);
+        Bitmap externalCover = loadGameCover(game.image);
         int drawable = TextUtils.isEmpty(game.image) ? 0 : getResources().getIdentifier(game.image, "drawable", getPackageName());
-        if (drawable != 0) {
+        if (externalCover != null) {
+            cover.setImageBitmap(externalCover);
+            cover.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            coverArea.addView(cover, new FrameLayout.LayoutParams(-1, -1));
+        } else if (drawable != 0) {
             cover.setImageResource(drawable);
             cover.setScaleType(ImageView.ScaleType.FIT_CENTER);
             coverArea.addView(cover, new FrameLayout.LayoutParams(-1, -1));
@@ -494,6 +500,14 @@ public class MainActivity extends Activity {
     }
     private Bitmap loadSlideBitmap(String imageName) {
         try { File customImage = new File(THEME_DIRECTORY, imageName); if (customImage.isFile()) return BitmapFactory.decodeFile(customImage.getAbsolutePath()); InputStream stream = getAssets().open("slides/" + imageName); Bitmap bitmap = BitmapFactory.decodeStream(stream); stream.close(); return bitmap; } catch (Exception ignored) { return null; }
+    }
+    private Bitmap loadGameCover(String imageName) {
+        if (TextUtils.isEmpty(imageName)) return null;
+        String fileName = new File(imageName).getName();
+        if (!fileName.equals(imageName)) return null;
+        File externalCover = new File(COVER_DIRECTORY, fileName);
+        if (!externalCover.isFile()) return null;
+        return BitmapFactory.decodeFile(externalCover.getAbsolutePath());
     }
     private void launch(Game game) {
         Intent intent = new Intent(); intent.setComponent(new ComponentName(RETROARCH, "com.retroarch.browser.retroactivity.RetroActivityFuture")); intent.putExtra("ROM", game.path); intent.putExtra("LIBRETRO", game.core); intent.putExtra("CONFIGFILE", RETROARCH_CONFIG); startActivity(intent);

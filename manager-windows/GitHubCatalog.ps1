@@ -45,6 +45,14 @@ function Get-PublicCatalogText {
     return $text
 }
 
+function Get-CatalogPropertyValue {
+    param($Game, [Parameter(Mandatory)][string]$Name)
+    if ($null -eq $Game) { return $null }
+    $property = $Game.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $null }
+    return $property.Value
+}
+
 function Test-PublicLandingUrl {
     param([string]$Url)
     $uri = $null
@@ -58,20 +66,26 @@ function Export-PublicCatalog {
     param([AllowEmptyCollection()][array]$Catalog = @(), [string]$DestinationPath)
     $items = @()
     foreach ($game in $Catalog) {
-        if ($game.publicSelected -isnot [bool] -or $game.publicSelected -ne $true -or $game.redistributable -isnot [bool] -or $game.redistributable -ne $true) { continue }
-        if ($game.category -notin @('homebrew','demo','public-domain')) { continue }
-        $label = Get-PublicCatalogText $game.label 200
-        $license = Get-PublicCatalogText $game.license 200
+        $publicSelected = Get-CatalogPropertyValue $game 'publicSelected'
+        $redistributable = Get-CatalogPropertyValue $game 'redistributable'
+        $category = Get-CatalogPropertyValue $game 'category'
+        if ($publicSelected -isnot [bool] -or $publicSelected -ne $true -or $redistributable -isnot [bool] -or $redistributable -ne $true) { continue }
+        if ($category -notin @('homebrew','demo','public-domain')) { continue }
+        $label = Get-PublicCatalogText (Get-CatalogPropertyValue $game 'label') 200
+        $license = Get-PublicCatalogText (Get-CatalogPropertyValue $game 'license') 200
         if (-not $label -or -not $license) { continue }
-        $platform = Get-PublicCatalogText $game.platform 100
+        $platform = Get-PublicCatalogText (Get-CatalogPropertyValue $game 'platform') 100
         $hash = [Security.Cryptography.SHA256]::Create()
         try { $id = ([BitConverter]::ToString($hash.ComputeHash([Text.Encoding]::UTF8.GetBytes($platform + ':' + $label)))).Replace('-','').ToLowerInvariant().Substring(0,24) } finally { $hash.Dispose() }
-        $item = [ordered]@{ id=$id; label=$label; platform=$platform; description=(Get-PublicCatalogText $game.description); license=$license; category=[string]$game.category; tags=@() }
-        foreach ($tag in @($game.tags)) { $clean = Get-PublicCatalogText $tag 80; if ($clean) { $item.tags += $clean } }
+        $item = [ordered]@{ id=$id; label=$label; platform=$platform; description=(Get-PublicCatalogText (Get-CatalogPropertyValue $game 'description')); license=$license; category=[string]$category; tags=@() }
+        foreach ($tag in @(Get-CatalogPropertyValue $game 'tags')) { $clean = Get-PublicCatalogText $tag 80; if ($clean) { $item.tags += $clean } }
         $year = 0
-        if ([int]::TryParse([string]$game.year,[ref]$year) -and $year -ge 1950 -and $year -le 2200) { $item.year=$year }
-        if ([string]$game.image -cmatch '^assets/[a-zA-Z0-9][a-zA-Z0-9_-]*\.(png|jpg|jpeg|webp)$') { $item.image=[string]$game.image }
-        if ($game.downloadPublicConfirmed -is [bool] -and $game.downloadPublicConfirmed -eq $true -and (Test-PublicLandingUrl ([string]$game.publicDownload))) { $item.publicDownload=[string]$game.publicDownload }
+        if ([int]::TryParse([string](Get-CatalogPropertyValue $game 'year'),[ref]$year) -and $year -ge 1950 -and $year -le 2200) { $item.year=$year }
+        $image = Get-CatalogPropertyValue $game 'image'
+        if ([string]$image -cmatch '^assets/[a-zA-Z0-9][a-zA-Z0-9_-]*\.(png|jpg|jpeg|webp)$') { $item.image=[string]$image }
+        $downloadConfirmed = Get-CatalogPropertyValue $game 'downloadPublicConfirmed'
+        $publicDownload = Get-CatalogPropertyValue $game 'publicDownload'
+        if ($downloadConfirmed -is [bool] -and $downloadConfirmed -eq $true -and (Test-PublicLandingUrl ([string]$publicDownload))) { $item.publicDownload=[string]$publicDownload }
         $items += [pscustomobject]$item
     }
     $payload = [pscustomobject]@{ version=1; items=@($items) }

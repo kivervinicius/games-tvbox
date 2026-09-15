@@ -165,7 +165,10 @@ function Add-CatalogMetadata {
         if ($null -eq $copy['year'] -and $null -ne $metadata.year) { $copy['year'] = $metadata.year }
         if (@($copy['tags']).Count -eq 0 -and @($metadata.tags).Count -gt 0) { $copy['tags'] = @($metadata.tags) }
         if ([string]::IsNullOrWhiteSpace([string]$copy['image']) -and -not [string]::IsNullOrWhiteSpace([string]$metadata.image)) { $copy['image'] = $metadata.image }
-        if (-not [string]::IsNullOrWhiteSpace([string]$metadata.coverUrl)) { Download-CoverToCache -Url $metadata.coverUrl -GameId ([string]$game.path) | Out-Null }
+        if (-not [string]::IsNullOrWhiteSpace([string]$metadata.coverUrl)) {
+            $cachedCover = Download-CoverToCache -Url $metadata.coverUrl -GameId ([string]$game.path)
+            if (-not [string]::IsNullOrWhiteSpace([string]$cachedCover)) { $copy['image'] = $cachedCover }
+        }
         [pscustomobject]$copy
     })
     Save-GameMetadataCache -Items $metadataItems | Out-Null
@@ -228,15 +231,85 @@ function Merge-GameCatalog {
     return @($merged.Values | Sort-Object platform, label)
 }
 
+function Copy-LocalRomFilesToFireStick {
+    param([Parameter(Mandatory)][string]$Serial, [AllowEmptyCollection()][array]$LocalGames = @())
+    $copied = 0
+    foreach ($game in $LocalGames) {
+        if (-not (Test-Path -LiteralPath $game.FullPath -PathType Leaf)) { continue }
+        $remoteGame = Convert-LocalCatalogGame -Game $game
+        if ($null -eq $remoteGame) { continue }
+        # test -e is read-only; a present file is never overwritten by this sync.
+        $exists = Invoke-Adb @('-s', $Serial, 'shell', 'test', '-e', $remoteGame.path)
+        if ($exists.ExitCode -eq 0) { continue }
+        $remoteDirectory = [IO.Path]::GetDirectoryName($remoteGame.path).Replace('\','/')
+        $mkdir = Invoke-Adb @('-s', $Serial, 'shell', 'mkdir', '-p', $remoteDirectory)
+        if ($mkdir.ExitCode -ne 0) { return [pscustomobject]@{ ExitCode=$mkdir.ExitCode; Output=$copied; Error=$mkdir.Error } }
+        $push = Invoke-Adb @('-s', $Serial, 'push', $game.FullPath, $remoteGame.path)
+        if ($push.ExitCode -ne 0) { return [pscustomobject]@{ ExitCode=$push.ExitCode; Output=$copied; Error=$push.Error } }
+        $copied++
+    }
+    return [pscustomobject]@{ ExitCode=0; Output=$copied; Error='' }
+}
+
+function Sync-CachedCoversToFireStick {
+    param([Parameter(Mandatory)][string]$Serial)
+    $coverRoot = Join-Path $script:CacheRoot 'covers'
+    if (-not (Test-Path -LiteralPath $coverRoot -PathType Container)) { return [pscustomobject]@{ ExitCode=0; Output=@{}; Error='' } }
+    $files = @(Get-ChildItem -LiteralPath $coverRoot -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension.ToLowerInvariant() -in @('.png','.jpg','.jpeg','.webp') })
+    if ($files.Count -eq 0) { return [pscustomobject]@{ ExitCode=0; Output=@{}; Error='' } }
+    $mkdir = Invoke-Adb @('-s', $Serial, 'shell', 'mkdir', '-p', $script:RemoteCoverRoot)
+    if ($mkdir.ExitCode -ne 0) { return [pscustomobject]@{ ExitCode=$mkdir.ExitCode; Output=@{}; Error=$mkdir.Error } }
+    $published = @{}
+    foreach ($cover in $files) {
+        $remoteCover = "$script:RemoteCoverRoot/$($cover.Name)"
+        $exists = Invoke-Adb @('-s', $Serial, 'shell', 'test', '-e', $remoteCover)
+        if ($exists.ExitCode -ne 0) {
+            $push = Invoke-Adb @('-s', $Serial, 'push', $cover.FullName, $remoteCover)
+            if ($push.ExitCode -ne 0) { return [pscustomobject]@{ ExitCode=$push.ExitCode; Output=$published; Error=$push.Error } }
+        }
+        $published[$cover.FullName] = $cover.Name
+    }
+    return [pscustomobject]@{ ExitCode=0; Output=$published; Error='' }
+}
+
+function Convert-CatalogForFireStick {
+    param([AllowEmptyCollection()][array]$Catalog = @(), [hashtable]$CoverMap = @{})
+    return @($Catalog | ForEach-Object {
+        $copy = [ordered]@{}
+        foreach ($property in $_.PSObject.Properties) { $copy[$property.Name] = $property.Value }
+        $image = [string]$copy['image']
+        if ($CoverMap.ContainsKey($image)) { $copy['image'] = $CoverMap[$image] }
+        elseif (-not [string]::IsNullOrWhiteSpace($image)) {
+            $name = [IO.Path]::GetFileName($image)
+            $copy['image'] = if ($name -match '^[a-zA-Z0-9][a-zA-Z0-9._-]*\.(png|jpg|jpeg|webp)$') { $name } else { '' }
+        }
+        [pscustomobject]$copy
+    })
+}
+
 function Sync-CatalogToFireStick {
-    param([Parameter(Mandatory)][string]$Serial, [Parameter(Mandatory)][array]$Catalog)
+    param([Parameter(Mandatory)][string]$Serial, [AllowEmptyCollection()][array]$Catalog = @())
+    $localGames = @()
+    if ($script:Settings -and -not [string]::IsNullOrWhiteSpace([string]$script:Settings.RomFolder)) {
+        # Re-scan on every click so games added after Manager startup enter the dynamic catalog.
+        $localGames = Get-LocalGameCatalog -RootPath $script:Settings.RomFolder
+        $copyResult = Copy-LocalRomFilesToFireStick -Serial $Serial -LocalGames $localGames
+        if ($copyResult.ExitCode -ne 0) { return $copyResult }
+    }
+    $localCatalog = @($localGames | ForEach-Object { Convert-LocalCatalogGame -Game $_ } | Where-Object { $null -ne $_ })
+    $catalogForDevice = Merge-GameCatalog -Existing $Catalog -Incoming $localCatalog
+    $coverResult = Sync-CachedCoversToFireStick -Serial $Serial
+    if ($coverResult.ExitCode -ne 0) { return $coverResult }
+    $catalogForDevice = Convert-CatalogForFireStick -Catalog $catalogForDevice -CoverMap $coverResult.Output
     $cachePath = Join-Path $script:CacheRoot 'catalog\games.json'
     New-Item -ItemType Directory -Path (Split-Path $cachePath) -Force | Out-Null
-    [ordered]@{ version = 1; items = @($Catalog) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $cachePath -Encoding utf8
+    [ordered]@{ version = 1; items = @($catalogForDevice) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $cachePath -Encoding utf8
     $directory = Invoke-Adb @('-s', $Serial, 'shell', 'mkdir', '-p', '/sdcard/Android/data/com.kiver.fireretro/files/catalog')
     if ($directory.ExitCode -ne 0) { return $directory }
     # adb push sends only the external catalog JSON consumed by FireRetro.
-    return Invoke-Adb @('-s', $Serial, 'push', $cachePath, $script:RemoteCatalogPath)
+    $sync = Invoke-Adb @('-s', $Serial, 'push', $cachePath, $script:RemoteCatalogPath)
+    if ($sync.ExitCode -ne 0) { return $sync }
+    return [pscustomobject]@{ ExitCode=0; Output=$sync.Output; Error=''; Catalog=$catalogForDevice }
 }
 
 function Test-PrivateImportDestination {

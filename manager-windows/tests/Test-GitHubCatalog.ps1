@@ -5,6 +5,11 @@ if (-not (Test-Path $module)) { throw 'GitHub catalog bridge is missing.' }
 . $module
 function Assert($Condition, $Message) { if (-not $Condition) { throw $Message } }
 $legal = [pscustomobject]@{ label='Example demo'; platform='NES'; publicSelected=$true; redistributable=$true; category='demo'; license='CC0'; path='/sdcard/roms/private.nes'; token='secret'; image='assets/demo.png'; description='A free demo'; publicDownload='https://example.org/demo'; downloadPublicConfirmed=$true }
+$strictLegal = [pscustomobject]@{ label='Minimal demo'; platform='NES'; publicSelected=$true; redistributable=$true; category='demo'; license='CC0' }
+Set-StrictMode -Version Latest
+$strictExport = Export-PublicCatalog -Catalog @($strictLegal)
+Assert (@($strictExport.items).Count -eq 1) 'A legal public item without optional properties must export under StrictMode.'
+Set-StrictMode -Off
 $commercial = [pscustomobject]@{ label='Commercial'; publicSelected=$true; redistributable=$false; category='commercial' }
 $unselected = [pscustomobject]@{ label='Hidden'; publicSelected=$false; redistributable=$true; category='demo' }
 $export = Export-PublicCatalog -Catalog @($legal,$commercial,$unselected)

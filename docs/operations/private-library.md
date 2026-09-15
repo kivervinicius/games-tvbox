@@ -15,7 +15,7 @@ O token do GitHub é salvo pelo Manager somente para o usuário atual do Windows
 
 A ação importa a biblioteca para a área privada, lê o inventário do Fire Stick, mescla o catálogo importado, aplica a sanitização do catálogo privado e publica somente `catalog.private.json` no checkout privado. Ela não chama `adb shell rm`, `mv` ou comandos de exclusão; não remove nem substitui ROMs, saves, favoritos ou configurações no Fire Stick.
 
-O catálogo do Launcher é dinâmico. Jogos, capas e metadados novos entram após uma sincronização do Manager; não é necessário recompilar o APK para adicionar esse conteúdo. Recompile o APK somente quando houver mudança no código do Launcher. Se o Fire Stick estiver offline, o Launcher continua usando o último catálogo sincronizado e, na ausência dele, o catálogo embutido.
+O catálogo do Launcher é dinâmico. Em cada sincronização, o Manager varre novamente a pasta local selecionada, envia somente ROMs que ainda não existem no Fire Stick, atualiza capas baixadas no cache e grava um catálogo sem caminhos do Windows. Jogos, capas e metadados novos entram após essa sincronização; não é necessário recompilar o APK para adicionar esse conteúdo. Recompile o APK somente quando houver mudança no código do Launcher. Se o Fire Stick estiver offline, o Launcher continua usando o último catálogo sincronizado e, na ausência dele, o catálogo embutido.
 
 ## Limites e ações manuais
 

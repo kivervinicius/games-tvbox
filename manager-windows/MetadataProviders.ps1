@@ -53,7 +53,8 @@ function ConvertTo-NormalizedGameMetadata {
     if ($null -eq $description) { $description = $Fallback.description }
     $year = Get-MetadataValue -Object $data -Names @('year','releaseYear','release_year')
     if ($null -eq $year) { $year = $Fallback.year }
-    $tags = ConvertTo-MetadataTags (Get-MetadataValue -Object $data -Names @('tags','genres','genre'))
+    # Wrap function output so an empty tag collection remains an empty array under StrictMode.
+    $tags = @(ConvertTo-MetadataTags (Get-MetadataValue -Object $data -Names @('tags','genres','genre')))
     if ($tags.Count -eq 0) { $tags = $Fallback.tags }
     return [pscustomobject]@{
         label = [string]$title

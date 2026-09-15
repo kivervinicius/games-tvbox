@@ -1,16 +1,37 @@
 # Games TV Box
 
-Launcher familiar para Fire TV/Android TV, com navegação por controle, capas, busca, filtros por plataforma e Manager para Windows.
+Launcher familiar para Fire TV/Android TV que transforma um acervo autorizado em uma biblioteca navegável por controle, com capas, busca, filtros, favoritos e integração com RetroArch.
 
-O projeto é distribuído como código-fonte e ferramentas de configuração. Ele não inclui ROMs, saves, dumps de aparelhos, APKs de terceiros ou chaves privadas. Use somente conteúdo que você tem direito de utilizar.
+## TL;DR
+
+O Games TV Box reduz a configuração manual de jogos retro no Fire TV: o Manager Windows conecta por ADB, prepara o catálogo e envia o launcher; o app `Jogos Retro` organiza as plataformas e abre cada jogo no RetroArch.
+
+Com ele você pode:
+
+- navegar por NES, SNES, Mega Drive, GBA e PlayStation;
+- buscar jogos, filtrar plataformas e abrir favoritos pelo controle;
+- personalizar slides, capas, títulos e legendas sem editar o app;
+- preservar ROMs, saves e configurações do RetroArch durante atualizações.
+
+→ [Comece pelo Quick Start](docs/quick-start.md) · [Veja a demonstração](docs/assets/screenshots/launcher-interface.png) · [Leia o manual completo](docs/index.md)
+
+## O que este produto melhora?
+
+| Antes / problema | Com o Games TV Box |
+|---|---|
+| procurar cada jogo dentro do RetroArch | biblioteca visual agrupada por plataforma |
+| configurar ADB manualmente a cada tentativa | Manager com conexão, diagnóstico e instalação |
+| capas e slides fixos | personalização local persistente |
+| controle sem atalho claro de retorno | atalhos visíveis e retorno ao launcher |
+| risco de misturar biblioteca e configuração | ROMs e saves permanecem fora do código público |
 
 ## O que está incluído
 
-- `launcher-android/`: aplicativo Jogos Retro e seus recursos.
-- `manager-windows/`: Manager para conexão ADB, catálogo e aparência.
-- `scripts/`: atalhos de build e auditorias.
-- `examples/`: modelos neutros de catálogo, tema e controle.
-- `docs/manual/`: manual ilustrado e solução de problemas.
+- `launcher-android/`: fonte do aplicativo Jogos Retro, catálogo de exemplo, temas e capas.
+- `manager-windows/`: Manager PowerShell para ADB, catálogo e aparência.
+- `scripts/`: build, auditoria e validações repetíveis.
+- `examples/`: modelos neutros de catálogo, tema, RetroArch e controle.
+- `docs/`: guias de usuário, desenvolvimento, operação, arquitetura e referência.
 
 ## Requisitos
 
@@ -19,23 +40,23 @@ O projeto é distribuído como código-fonte e ferramentas de configuração. El
 - Fire TV/Android TV com depuração ADB habilitada.
 - RetroArch e cores compatíveis com a arquitetura do aparelho.
 
-## Começo rápido
+## Documentação por objetivo
 
-1. Baixe ou clone este repositório.
-2. Instale o ADB e confirme que `adb version` funciona.
-3. Abra `manager-windows/Start-FireRetroManager.cmd`.
-4. Informe o endereço do aparelho, aceite a autorização na TV e escolha a pasta do seu acervo.
-5. Gere o APK com `pwsh -File scripts/Build-FireRetro.ps1` usando um keystore externo.
-6. Instale o APK pelo Manager e abra `Jogos Retro`.
-
-O passo a passo completo está no [manual](docs/manual/README.md). Para criar configurações, consulte [examples](examples/README.md).
-
-## Build Android
-
-O script usa Android API 28 e ferramentas locais. Baixe o SDK, configure o caminho no script de build e forneça uma chave de assinatura fora do Git. Nunca adicione keystores privados ao repositório.
+- [Índice da documentação](docs/index.md)
+- [Quick Start](docs/quick-start.md)
+- [Instalação detalhada](docs/installation.md)
+- [Funcionalidades](docs/features/index.md)
+- [Manual visual](docs/manual/README.md)
+- [Configuração](docs/reference/configuration.md)
+- [Exemplos de configuração](examples/README.md)
+- [Solução de problemas](docs/troubleshooting.md)
+- [Arquitetura](docs/architecture/overview.md)
+- [Desenvolvimento](docs/development/build.md)
 
 ## Desenvolvimento
 
 Execute `pwsh -File launcher-android/tests/project.tests.ps1` e `pwsh -File manager-windows/tests/Test-Manager.ps1`. Antes de enviar alterações, rode `pwsh -File scripts/Verify-PublicRelease.ps1`.
 
-Leia [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo de revisão.
+O build Android usa API 28 e aceita um keystore externo por `-KeystorePath` ou pelas variáveis `FIRERETRO_KEYSTORE`, `FIRERETRO_KEY_ALIAS` e `FIRERETRO_KEY_PASSWORD`. Nunca adicione chaves privadas ao Git.
+
+Leia [CONTRIBUTING.md](CONTRIBUTING.md) e [SECURITY.md](SECURITY.md) antes de abrir uma alteração.

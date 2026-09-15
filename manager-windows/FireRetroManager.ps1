@@ -85,13 +85,7 @@ function Get-LocalGameCatalog {
         if ($file.Extension.ToLowerInvariant() -notin $script:RomExtensions) { continue }
         $rootPrefix = $RootPath.TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar
         $relative = $file.FullName.Substring($rootPrefix.Length)
-        $pathText = $relative.ToLowerInvariant()
-        $platform = if ($pathText -match 'ps1|playstation|psx' -or $file.Extension -in @('.iso','.chd','.cue','.bin')) { 'PlayStation' }
-            elseif ($pathText -match 'gba|game boy advance' -or $file.Extension -eq '.gba') { 'GBA' }
-            elseif ($pathText -match 'mega|genesis|megadrive' -or $file.Extension -in @('.md','.gen','.sms')) { 'Mega Drive' }
-            elseif ($pathText -match 'snes|super nintendo' -or $file.Extension -in @('.sfc','.smc','.fig')) { 'SNES' }
-            elseif ($pathText -match 'nes|famicom' -or $file.Extension -in @('.nes','.nez')) { 'NES' }
-            else { 'Outros' }
+        $platform = Get-GamePlatformForPath -Path $relative
         $games += [pscustomobject]@{ Id = ($relative -replace '[^\p{L}\p{Nd}]','_'); DisplayName = [IO.Path]::GetFileNameWithoutExtension($file.Name); Platform = $platform; RelativePath = $relative; FullPath = $file.FullName }
     }
     return @($games | Sort-Object Platform, DisplayName)
@@ -101,9 +95,10 @@ function Get-GamePlatformForPath {
     param([Parameter(Mandatory)][string]$Path)
     $extension = [IO.Path]::GetExtension($Path).ToLowerInvariant()
     $pathText = $Path.ToLowerInvariant()
+    if ($pathText -match 'mega|genesis|megadrive' -or $extension -in @('.md','.gen','.sms')) { return 'Mega Drive' }
     if ($pathText -match 'ps1|playstation|psx|/ps/' -or $extension -in @('.iso','.chd','.cue','.bin')) { return 'PlayStation' }
     if ($pathText -match 'gba|game boy advance' -or $extension -eq '.gba') { return 'GBA' }
-    if ($pathText -match 'mega|genesis|megadrive' -or $extension -in @('.md','.gen','.sms')) { return 'Mega Drive' }
+    if ($pathText -match 'game boy|gameboy|/gb/' -or $extension -in @('.gb','.gbc')) { return 'GBA' }
     if ($pathText -match 'snes|super nintendo' -or $extension -in @('.sfc','.smc','.fig')) { return 'SNES' }
     if ($pathText -match 'nes|famicom' -or $extension -in @('.nes','.nez')) { return 'NES' }
     return 'Outros'
@@ -134,6 +129,13 @@ function New-RemoteCatalogGame {
     }
 }
 
+function Convert-LocalCatalogGame {
+    param([Parameter(Mandatory)]$Game)
+    $relativePath = ([string]$Game.RelativePath).Replace('\', '/').TrimStart('/')
+    if ([string]::IsNullOrWhiteSpace($relativePath)) { return $null }
+    return New-RemoteCatalogGame -Path "/sdcard/roms/$relativePath"
+}
+
 function Get-RemoteGameInventory {
     param([Parameter(Mandatory)][string]$Serial)
     $result = Invoke-Adb @('-s', $Serial, 'shell', 'find', '/sdcard/roms', '-type', 'f')
@@ -162,6 +164,7 @@ function Get-RemoteCatalog {
     param([Parameter(Mandatory)][string]$Serial)
     $cachePath = Join-Path $script:CacheRoot 'catalog\remote-games.json'
     New-Item -ItemType Directory -Path (Split-Path $cachePath) -Force | Out-Null
+    # adb pull reads the existing external catalog without changing the Fire Stick.
     $pull = Invoke-Adb @('-s', $Serial, 'pull', $script:RemoteCatalogPath, $cachePath)
     if ($pull.ExitCode -ne 0) { return @() }
     if (-not (Test-Path -LiteralPath $cachePath)) { return @() }
@@ -194,7 +197,9 @@ function Sync-CatalogToFireStick {
     $cachePath = Join-Path $script:CacheRoot 'catalog\games.json'
     New-Item -ItemType Directory -Path (Split-Path $cachePath) -Force | Out-Null
     [ordered]@{ version = 1; items = @($Catalog) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $cachePath -Encoding utf8
-    # The only ADB write in this sync is the external catalog JSON consumed by FireRetro.
+    $directory = Invoke-Adb @('-s', $Serial, 'shell', 'mkdir', '-p', '/sdcard/Android/data/com.kiver.fireretro/files/catalog')
+    if ($directory.ExitCode -ne 0) { return $directory }
+    # adb push sends only the external catalog JSON consumed by FireRetro.
     return Invoke-Adb @('-s', $Serial, 'push', $cachePath, $script:RemoteCatalogPath)
 }
 
@@ -455,7 +460,9 @@ $syncCatalog.Add_Click({
         $remoteInventory = Get-RemoteGameInventory -Serial $serial
         if ($remoteInventory.ExitCode -ne 0) { throw $remoteInventory.Error }
         $existing = Get-RemoteCatalog -Serial $serial
-        $catalog = Merge-GameCatalog -Existing $existing -Incoming $remoteInventory.Output
+        $localCatalog = @($script:LocalCatalog | ForEach-Object { Convert-LocalCatalogGame -Game $_ } | Where-Object { $null -ne $_ })
+        $incomingCatalog = @($remoteInventory.Output) + @($localCatalog)
+        $catalog = Merge-GameCatalog -Existing $existing -Incoming $incomingCatalog
         $result = Sync-CatalogToFireStick -Serial $serial -Catalog $catalog
         if ($result.ExitCode -ne 0) { throw $result.Error }
         $details.Text = "Catálogo sincronizado.`r`nJogos locais: $($script:LocalCatalog.Count)`r`nJogos encontrados no Fire Stick: $($remoteInventory.Output.Count)`r`nItens enviados: $($catalog.Count)`r`n`r`nROMs, saves e configurações não foram alterados."

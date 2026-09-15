@@ -28,15 +28,17 @@ public final class CatalogStore {
                 ? (externalCatalog.isDirectory() ? new File(externalCatalog, "catalog/games.json") : externalCatalog)
                 : new File(EXTERNAL_CATALOG);
         if (external.isFile()) {
-            try {
-                List<CatalogGame> games = parse(new BufferedReader(new FileReader(external)));
+            try (BufferedReader reader = new BufferedReader(new FileReader(external))) {
+                List<CatalogGame> games = parse(reader);
                 if (!games.isEmpty()) return games;
             } catch (Exception ignored) { }
         }
         try {
             AssetManager assets = context.getAssets();
-            InputStream stream = assets.open("games.json");
-            return parse(new BufferedReader(new InputStreamReader(stream, "UTF-8")));
+            try (InputStream stream = assets.open("games.json");
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"))) {
+                return parse(reader);
+            }
         } catch (Exception ignored) {
             return Collections.emptyList();
         }
@@ -46,7 +48,6 @@ public final class CatalogStore {
         StringBuilder text = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) text.append(line);
-        reader.close();
         JSONObject root = new JSONObject(text.toString());
         JSONArray items = root.optJSONArray("items");
         List<CatalogGame> result = new ArrayList<>();

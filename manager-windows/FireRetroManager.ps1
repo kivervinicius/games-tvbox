@@ -12,6 +12,9 @@ $script:SettingsPath = Join-Path $script:CacheRoot 'settings.json'
 $script:ThemeCacheRoot = Join-Path $script:CacheRoot 'theme'
 $script:ThemeConfigPath = Join-Path $script:ThemeCacheRoot 'slides.json'
 $script:RemoteThemeRoot = '/sdcard/Android/data/com.kiver.fireretro/files/theme'
+$script:RemoteCatalogPath = '/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json'
+$script:RemoteCoverRoot = '/sdcard/Android/data/com.kiver.fireretro/files/covers'
+$script:RomExtensions = @('.nes','.nez','.sfc','.smc','.fig','.md','.gen','.sms','.gba','.gb','.gbc','.iso','.chd','.cue','.bin','.zip','.7z')
 
 function Load-ManagerSettings {
     if (Test-Path -LiteralPath $script:SettingsPath) {
@@ -78,9 +81,8 @@ function Get-LocalGameCatalog {
     param([Parameter(Mandatory)][string]$RootPath)
     if (-not (Test-Path -LiteralPath $RootPath -PathType Container)) { return @() }
     $games = @()
-    $extensions = @('.nes','.nez','.sfc','.smc','.fig','.md','.gen','.sms','.gba','.gb','.gbc','.iso','.chd','.cue','.bin','.zip','.7z')
     foreach ($file in Get-ChildItem -LiteralPath $RootPath -File -Recurse -ErrorAction SilentlyContinue) {
-        if ($file.Extension.ToLowerInvariant() -notin $extensions) { continue }
+        if ($file.Extension.ToLowerInvariant() -notin $script:RomExtensions) { continue }
         $rootPrefix = $RootPath.TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar
         $relative = $file.FullName.Substring($rootPrefix.Length)
         $pathText = $relative.ToLowerInvariant()
@@ -93,6 +95,107 @@ function Get-LocalGameCatalog {
         $games += [pscustomobject]@{ Id = ($relative -replace '[^\p{L}\p{Nd}]','_'); DisplayName = [IO.Path]::GetFileNameWithoutExtension($file.Name); Platform = $platform; RelativePath = $relative; FullPath = $file.FullName }
     }
     return @($games | Sort-Object Platform, DisplayName)
+}
+
+function Get-GamePlatformForPath {
+    param([Parameter(Mandatory)][string]$Path)
+    $extension = [IO.Path]::GetExtension($Path).ToLowerInvariant()
+    $pathText = $Path.ToLowerInvariant()
+    if ($pathText -match 'ps1|playstation|psx|/ps/' -or $extension -in @('.iso','.chd','.cue','.bin')) { return 'PlayStation' }
+    if ($pathText -match 'gba|game boy advance' -or $extension -eq '.gba') { return 'GBA' }
+    if ($pathText -match 'mega|genesis|megadrive' -or $extension -in @('.md','.gen','.sms')) { return 'Mega Drive' }
+    if ($pathText -match 'snes|super nintendo' -or $extension -in @('.sfc','.smc','.fig')) { return 'SNES' }
+    if ($pathText -match 'nes|famicom' -or $extension -in @('.nes','.nez')) { return 'NES' }
+    return 'Outros'
+}
+
+function Get-CorePathForPlatform {
+    param([Parameter(Mandatory)][string]$Platform)
+    $coreName = switch ($Platform) {
+        'PlayStation' { 'pcsx_rearmed_libretro_android.so' }
+        'GBA' { 'mgba_libretro_android.so' }
+        'Mega Drive' { 'genesis_plus_gx_libretro_android.so' }
+        'SNES' { 'snes9x_libretro_android.so' }
+        'NES' { 'fceumm_libretro_android.so' }
+        default { '' }
+    }
+    if ([string]::IsNullOrWhiteSpace($coreName)) { return '' }
+    return "/data/user/0/com.retroarch.ra32/cores/$coreName"
+}
+
+function New-RemoteCatalogGame {
+    param([Parameter(Mandatory)][string]$Path)
+    $platform = Get-GamePlatformForPath -Path $Path
+    [pscustomobject]@{
+        label = [IO.Path]::GetFileNameWithoutExtension($Path)
+        platform = $platform
+        path = $Path
+        core_path = Get-CorePathForPlatform -Platform $platform
+    }
+}
+
+function Get-RemoteGameInventory {
+    param([Parameter(Mandatory)][string]$Serial)
+    $result = Invoke-Adb @('-s', $Serial, 'shell', 'find', '/sdcard/roms', '-type', 'f')
+    if ($result.ExitCode -ne 0) { return $result }
+    $games = @($result.Output -split "`r?`n" | Where-Object {
+        $extension = [IO.Path]::GetExtension($_).ToLowerInvariant()
+        -not [string]::IsNullOrWhiteSpace($_) -and $extension -in $script:RomExtensions
+    } | ForEach-Object { New-RemoteCatalogGame -Path $_ })
+    return [pscustomobject]@{ ExitCode = 0; Output = $games; Error = '' }
+}
+
+function Get-RemoteThemeInventory {
+    param([Parameter(Mandatory)][string]$Serial)
+    $theme = Invoke-Adb @('-s', $Serial, 'shell', 'find', $script:RemoteThemeRoot, '-type', 'f')
+    if ($theme.ExitCode -ne 0) { return $theme }
+    $covers = Invoke-Adb @('-s', $Serial, 'shell', 'find', $script:RemoteCoverRoot, '-type', 'f')
+    $coverPaths = if ($covers.ExitCode -eq 0) { $covers.Output -split "`r?`n" } else { @() }
+    $paths = @($theme.Output -split "`r?`n") + @($coverPaths)
+    $items = @($paths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique | ForEach-Object {
+        [pscustomobject]@{ Path = $_; Name = [IO.Path]::GetFileName($_); Kind = if ($_ -like "$script:RemoteCoverRoot/*") { 'Capa' } else { 'Slide' } }
+    })
+    return [pscustomobject]@{ ExitCode = 0; Output = $items; Error = '' }
+}
+
+function Get-RemoteCatalog {
+    param([Parameter(Mandatory)][string]$Serial)
+    $cachePath = Join-Path $script:CacheRoot 'catalog\remote-games.json'
+    New-Item -ItemType Directory -Path (Split-Path $cachePath) -Force | Out-Null
+    $pull = Invoke-Adb @('-s', $Serial, 'pull', $script:RemoteCatalogPath, $cachePath)
+    if ($pull.ExitCode -ne 0) { return @() }
+    if (-not (Test-Path -LiteralPath $cachePath)) { return @() }
+    try { return @(Get-Content -LiteralPath $cachePath -Raw | ConvertFrom-Json | Select-Object -ExpandProperty items) } catch { return @() }
+}
+
+function Get-NormalizedGamePath {
+    param([Parameter(Mandatory)][string]$Path)
+    return $Path.Replace('\', '/').Trim().ToLowerInvariant()
+}
+
+function Merge-GameCatalog {
+    param([array]$Existing = @(), [array]$Incoming = @())
+    $merged = [ordered]@{}
+    foreach ($game in @($Incoming)) {
+        if ($null -eq $game -or [string]::IsNullOrWhiteSpace([string]$game.path)) { continue }
+        $key = Get-NormalizedGamePath -Path ([string]$game.path)
+        if (-not $merged.Contains($key)) { $merged[$key] = $game }
+    }
+    foreach ($game in @($Existing)) {
+        if ($null -eq $game -or [string]::IsNullOrWhiteSpace([string]$game.path)) { continue }
+        # An existing catalog record is authoritative because it may contain manual edits.
+        $merged[(Get-NormalizedGamePath -Path ([string]$game.path))] = $game
+    }
+    return @($merged.Values | Sort-Object platform, label)
+}
+
+function Sync-CatalogToFireStick {
+    param([Parameter(Mandatory)][string]$Serial, [Parameter(Mandatory)][array]$Catalog)
+    $cachePath = Join-Path $script:CacheRoot 'catalog\games.json'
+    New-Item -ItemType Directory -Path (Split-Path $cachePath) -Force | Out-Null
+    [ordered]@{ version = 1; items = @($Catalog) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $cachePath -Encoding utf8
+    # The only ADB write in this sync is the external catalog JSON consumed by FireRetro.
+    return Invoke-Adb @('-s', $Serial, 'push', $cachePath, $script:RemoteCatalogPath)
 }
 
 function Select-CoverImage {
@@ -327,6 +430,7 @@ function Show-ThemeSlide {
 Refresh-ThemeEditor
 
 $remoteControl = [Windows.Forms.Button]::new(); $remoteControl.Text = 'Enviar configurações do controle'; $remoteControl.Width = 250; $remoteControl.Location = [Drawing.Point]::new(220, 194); $form.Controls.Add($remoteControl); Apply-ButtonStyle $remoteControl -Primary
+$syncCatalog = [Windows.Forms.Button]::new(); $syncCatalog.Text = 'Sincronizar catálogo'; $syncCatalog.Width = 190; $syncCatalog.Location = [Drawing.Point]::new(765, 194); $form.Controls.Add($syncCatalog); Apply-ButtonStyle $syncCatalog -Primary
 $status = [Windows.Forms.Label]::new(); $status.Text = '●  Desconectado'; $status.AutoSize = $true; $status.Location = [Drawing.Point]::new(490, 202); $status.Font = [Drawing.Font]::new('Segoe UI', 11, [Drawing.FontStyle]::Bold); $status.ForeColor = [Drawing.Color]::FromArgb(255, 195, 90); $form.Controls.Add($status)
 $details = [Windows.Forms.TextBox]::new(); $details.Multiline = $true; $details.ReadOnly = $true; $details.ScrollBars = 'Vertical'; $details.Dock = 'Bottom'; $details.Height = 190; $details.BackColor = [Drawing.Color]::FromArgb(15, 40, 84); $details.ForeColor = [Drawing.Color]::FromArgb(225, 235, 255); $details.Font = [Drawing.Font]::new('Consolas', 10); $details.BorderStyle = 'FixedSingle'; $form.Controls.Add($details)
 
@@ -345,6 +449,18 @@ $gameSelect.Add_SelectedIndexChanged({ if ($gameSelect.SelectedIndex -ge 0) { Sh
 $remoteOpen.Add_Click({ $result = Open-FireRetroRemote -Serial "$($ip.Text):5555"; $details.Text = if ($result.ExitCode -eq 0) { 'FireRetro aberto no Fire Stick.' } else { $result.Error } })
 $remoteRestart.Add_Click({ $result = Restart-FireRetroRemote -Serial "$($ip.Text):5555"; $details.Text = if ($result.ExitCode -eq 0) { 'FireRetro reiniciado no Fire Stick.' } else { $result.Error } })
 $remoteControl.Add_Click({ $result = Set-RemoteControllerProfile -Serial "$($ip.Text):5555"; $details.Text = if ($result.ExitCode -eq 0) { 'Configurações do controle enviadas. Um backup foi criado no Fire Stick.' } else { $result.Error } })
+$syncCatalog.Add_Click({
+    try {
+        $serial = "$($ip.Text):5555"
+        $remoteInventory = Get-RemoteGameInventory -Serial $serial
+        if ($remoteInventory.ExitCode -ne 0) { throw $remoteInventory.Error }
+        $existing = Get-RemoteCatalog -Serial $serial
+        $catalog = Merge-GameCatalog -Existing $existing -Incoming $remoteInventory.Output
+        $result = Sync-CatalogToFireStick -Serial $serial -Catalog $catalog
+        if ($result.ExitCode -ne 0) { throw $result.Error }
+        $details.Text = "Catálogo sincronizado.`r`nJogos locais: $($script:LocalCatalog.Count)`r`nJogos encontrados no Fire Stick: $($remoteInventory.Output.Count)`r`nItens enviados: $($catalog.Count)`r`n`r`nROMs, saves e configurações não foram alterados."
+    } catch { $details.Text = $_.Exception.Message }
+})
 $coverChoose.Add_Click({ $script:SelectedCover = Select-CoverImage; if ($script:SelectedCover) { if ($coverPreview.Image) { $coverPreview.Image.Dispose(); $coverPreview.Image = $null }; $coverPreview.Image = [Drawing.Image]::FromFile($script:SelectedCover); $details.Text = "Imagem carregada. Escreva um título e selecione Adicionar slide." } })
 $coverSave.Add_Click({ try { if (-not $script:SelectedCover) { throw 'Primeiro escolha uma imagem para o novo slide.' }; $titleText = $gameName.Text.Trim(); if ([string]::IsNullOrWhiteSpace($titleText)) { throw 'Informe o título do slide.' }; $newSlide = Add-ThemeSlideImage -SourcePath $script:SelectedCover -Title $titleText -Caption $script:ThemeCaption.Text.Trim(); [void]$script:ThemeSlides.Add($newSlide); $script:SelectedCover = $null; Refresh-ThemeEditor; $gameSelect.SelectedIndex = $script:ThemeSlides.Count - 1; $details.Text = "Slide adicionado ao tema. Clique em Salvar no Fire Stick quando terminar." } catch { $details.Text = $_.Exception.Message } })
 $script:ThemeUpdate.Add_Click({ try { if ($gameSelect.SelectedIndex -lt 0) { throw 'Escolha um slide para atualizar.' }; $slide = $script:ThemeSlides[$gameSelect.SelectedIndex]; $slide.Title = $gameName.Text.Trim(); $slide.Caption = $script:ThemeCaption.Text.Trim(); if ([string]::IsNullOrWhiteSpace($slide.Title)) { throw 'Informe o título do slide.' }; $script:ThemeSlides[$gameSelect.SelectedIndex] = $slide; Refresh-ThemeEditor; $gameSelect.SelectedIndex = [Math]::Max(0, $gameSelect.SelectedIndex); $details.Text = 'Texto do slide atualizado no cache local.' } catch { $details.Text = $_.Exception.Message } })

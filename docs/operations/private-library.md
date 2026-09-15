@@ -21,6 +21,8 @@ O catálogo do Launcher é dinâmico. Em cada sincronização, o Manager varre n
 
 O GitHub Pages recebe apenas a galeria pública selecionada e itens legais para redistribuição, como homebrew, demos e domínio público. ROMs comerciais, saves, caminhos pessoais, tokens e links privados nunca são publicados. Pages é um site estático: ele não armazena sua biblioteca privada, não autentica o Fire Stick e não transfere ROMs.
 
+Para atualizar a galeria, exporte pelo Manager o catálogo público revisado para `catalog-site/catalog.public.json` no checkout Pages configurado. Faça commit e push do JSON e apenas das capas autorizadas para a branch `main`, usando o Git ou uma automação externa configurada. O Manager faz a exportação pública; o push automático disponível nele é o da publicação privada. No repositório Pages, cada push em `main` executa automaticamente **Publish catalog Pages**; **Run workflow** permanece como opção manual. O workflow audita e publica somente `catalog-site/`, sem ROMs comerciais, saves ou conteúdo do checkout privado.
+
 As escolhas feitas no diálogo **Catálogo GitHub** são guardadas no cache privado do Manager e reabrem na próxima revisão e sincronização. Esse arquivo não é exportado para Pages e não substitui a revisão manual dos direitos de publicação.
 
 Ainda exigem ação manual: aceitar a autorização ADB na TV, parear e mapear controles Bluetooth, instalar/atualizar o APK quando o código mudar, revisar quais itens podem ser públicos, criar o checkout privado e garantir que o Git tenha credenciais para enviar o commit. Quando ADB, GitHub ou a internet falharem, mantenha a cópia importada e use o catálogo local; tente a publicação novamente apenas depois de corrigir a conexão ou a credencial.

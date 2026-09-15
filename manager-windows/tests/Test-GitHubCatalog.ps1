@@ -152,4 +152,5 @@ $site=Get-Content (Join-Path $root 'catalog-site/index.html') -Raw
 Assert ($site -match 'catalog.public.json' -and $site -match 'textContent' -and $site -notmatch 'innerHTML') 'Gallery must fetch safely and avoid HTML injection.'
 $workflow=Get-Content (Join-Path $root '.github/workflows/pages.yml') -Raw
 Assert ($workflow -match 'path: catalog-site' -and $workflow -match 'workflow_dispatch') 'Pages must deploy only the static folder explicitly.'
+& (Join-Path $root 'scripts/Test-PagesWorkflow.ps1')
 Write-Output 'PASS: GitHub catalog privacy, credential storage and Pages contract'

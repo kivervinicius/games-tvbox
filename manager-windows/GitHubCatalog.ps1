@@ -14,13 +14,24 @@ function Save-GitHubCredential {
 
 function Get-GitHubCredential {
     $path = Join-Path $env:LOCALAPPDATA 'FireRetroManager/github-token.xml'
-    try { return (Import-Clixml -LiteralPath $path -ErrorAction Stop | ConvertTo-SecureString -ErrorAction Stop) }
+    try {
+        $stored = Import-Clixml -LiteralPath $path -ErrorAction Stop
+        # Native CLIXML decrypts its SecureString through DPAPI during import.
+        if ($stored -is [Security.SecureString]) { return $stored }
+        # Retain support for the encrypted-string format written by this Manager.
+        if ($stored -is [string]) { return (ConvertTo-SecureString -String $stored -ErrorAction Stop) }
+        throw 'Formato de credencial inválido.'
+    }
     catch { throw 'Salve a credencial GitHub neste usuário do Windows antes de publicar.' }
 }
 
 function Get-PublicCatalogText {
     param($Value, [int]$MaxLength = 2000)
     $text = ([string]$Value).Trim()
+    # Free-text fields never need file separators. Reject them conservatively,
+    # including percent-encoded paths, instead of guessing private root names.
+    $decoded = [Uri]::UnescapeDataString($text)
+    if ($decoded.Contains('/') -or $decoded.Contains('\')) { return '' }
     if ($text.Length -gt $MaxLength -or $text -match '(?i)(?:[a-z]:[\\/]|\\\\|/(?:sdcard|data|home|users|storage)/|https?://|\b(?:\d{1,3}\.){3}\d{1,3}\b|gh[pousr]_|github_pat_|(?:token|password|secret|authorization|api[_ -]?key)\s*[:=])') { return '' }
     return $text
 }

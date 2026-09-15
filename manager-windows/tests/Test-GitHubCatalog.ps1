@@ -26,6 +26,10 @@ foreach ($bad in @('https://user:pass@example.org/x','https://localhost/x','http
 }
 $legal.description='Private C:\Users\someone\games and 10.0.0.1'
 Assert (-not (Export-PublicCatalog @($legal)).items[0].description) 'Private data in free text must be removed.'
+foreach ($privateText in @('/var/lib/games/game','Stored under /opt/library/game','/mnt/archive','games/private/game','../library/game','~/.config/game','%2Fvar%2Flib%2Fgames','Folder: \library\game')) {
+    $legal.description=$privateText
+    Assert (-not (Export-PublicCatalog @($legal)).items[0].description) 'Absolute, relative and encoded local paths must be removed from public free text.'
+}
 $tempRoot=Join-Path ([IO.Path]::GetTempPath()) ('github-catalog-test-'+[guid]::NewGuid().ToString('N'))
 $prior=$env:LOCALAPPDATA
 try {
@@ -37,6 +41,12 @@ try {
     Assert ($secure -is [Security.SecureString]) 'Reading the credential must return a SecureString.'
     $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
     try { Assert ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) -eq 'test-only-credential') 'DPAPI round trip failed.' } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+    $token | Export-Clixml -LiteralPath $stored
+    $nativeSecure=Get-GitHubCredential
+    Assert ($nativeSecure -is [Security.SecureString]) 'Native DPAPI SecureString CLIXML must be returned directly.'
+    $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($nativeSecure)
+    try { Assert ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) -eq 'test-only-credential') 'Native SecureString round trip failed.' } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+    Save-GitHubCredential -Token $token | Out-Null
     $rejected=$false
     try { Publish-PrivateCatalog -RepoPath $root -Catalog @($legal) } catch { $rejected=$true }
     Assert $rejected 'Publishing into the public product checkout must be rejected.'

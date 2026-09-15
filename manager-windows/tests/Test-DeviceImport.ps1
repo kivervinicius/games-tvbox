@@ -58,17 +58,17 @@ try {
     function Import-FireStickLibrary { param([string]$Serial) return [pscustomobject]@{ ExitCode=0; Destination=$privateImport; Error='' } }
     function Get-RemoteGameInventory { param([string]$Serial) return [pscustomobject]@{ ExitCode=0; Output=@([pscustomobject]@{ label='Remote game'; path='/sdcard/roms/nes/Remote.nes'; platform='NES'; core_path='core' }); Error='' } }
     function Add-CatalogMetadata { param([array]$Catalog) return $Catalog }
-    function Publish-PrivateCatalog { param([string]$RepoPath, [array]$Catalog) $script:PublishedCatalog=@($Catalog); return [pscustomobject]@{ Published=$true; Count=$Catalog.Count } }
+    function Publish-PrivateLibrary { param([string]$RepoPath, [string]$ImportPath, [array]$Catalog) $script:PublishedCatalog=@($Catalog); return [pscustomobject]@{ Published=$true; Count=$Catalog.Count; Copied=0; Conflicts=0 } }
     $privateSync = Sync-FireStickToPrivateRepo -Serial 'fake:5555' -RepoPath (Join-Path $tempRoot 'private-checkout')
     Assert $privateSync.Published.Published 'Private sync must delegate publication to the private publisher.'
     Assert ($privateSync.CatalogCount -eq 2) 'Private sync must merge imported and remote catalog entries.'
-    Assert ($script:PublishedCatalog.Count -eq 2) 'Private sync must publish the sanitized merged catalog only through Publish-PrivateCatalog.'
+    Assert ($script:PublishedCatalog.Count -eq 2) 'Private sync must publish the sanitized merged catalog through the private library publisher.'
 } finally {
     $env:LOCALAPPDATA = $priorLocalAppData
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-foreach ($required in @('Import-FireStickLibrary','Sync-FireStickToPrivateRepo','adb pull','ROMs','saves','Publish-PrivateCatalog','MessageBox')) {
+foreach ($required in @('Import-FireStickLibrary','Sync-FireStickToPrivateRepo','adb pull','ROMs','saves','Publish-PrivateLibrary','MessageBox')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Device import contract missing: $required" }
 }
 if ($source -match 'adb shell rm|adb shell move|Remove-Item.*rom') { throw 'Device import must not delete ROMs or saves' }

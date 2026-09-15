@@ -180,6 +180,55 @@ function Publish-PrivateCatalog {
     return [pscustomobject]@{ Published=$true; Count=$privateItems.Count }
 }
 
+function Get-PrivateLibraryFiles {
+    param([Parameter(Mandatory)][string]$ImportPath)
+    $mapping = [ordered]@{ ROMs = 'roms'; saves = 'saves'; covers = 'covers'; theme = 'theme'; playlists = 'playlists' }
+    $files = @()
+    foreach ($sourceName in $mapping.Keys) {
+        $sourceRoot = Join-Path $ImportPath $sourceName
+        if (-not (Test-Path -LiteralPath $sourceRoot -PathType Container)) { continue }
+        foreach ($file in Get-ChildItem -LiteralPath $sourceRoot -Recurse -File -ErrorAction SilentlyContinue) {
+            $relative = $file.FullName.Substring($sourceRoot.Length).TrimStart('\','/').Replace('\','/')
+            $files += [pscustomobject]@{ Source=$file.FullName; Relative=(Join-Path $mapping[$sourceName] $relative).Replace('\','/'); Length=$file.Length }
+        }
+    }
+    return @($files)
+}
+
+function Publish-PrivateLibrary {
+    param([Parameter(Mandatory)][string]$RepoPath, [Parameter(Mandatory)][string]$ImportPath, [AllowEmptyCollection()][array]$Catalog = @())
+    $files = Get-PrivateLibraryFiles -ImportPath $ImportPath
+    $oversized = @($files | Where-Object { $_.Length -ge 100MB })
+    if ($oversized.Count -gt 0) { throw 'A biblioteca contém arquivo(s) com 100 MB ou mais; use Git LFS no checkout privado antes de publicar.' }
+    $catalogResult = Publish-PrivateCatalog -RepoPath $RepoPath -Catalog $Catalog
+    $resolved = (Resolve-Path -LiteralPath $RepoPath -ErrorAction Stop).Path.TrimEnd('\','/')
+    $copied = @(); $conflicts = @()
+    foreach ($file in $files) {
+        $destination = Join-Path $resolved $file.Relative
+        if (Test-Path -LiteralPath $destination -PathType Leaf) {
+            $sourceHash = (Get-FileHash -LiteralPath $file.Source -Algorithm SHA256).Hash
+            $destinationHash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash
+            if ($sourceHash -ne $destinationHash) { $conflicts += $file.Relative }
+            continue
+        }
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+        Copy-Item -LiteralPath $file.Source -Destination $destination -ErrorAction Stop
+        $copied += $file.Relative
+    }
+    $stagedPaths = @('roms','saves','covers','theme','playlists') | Where-Object { Test-Path -LiteralPath (Join-Path $resolved $_) }
+    if ($stagedPaths.Count -gt 0) { Invoke-CatalogGit $resolved (@('add','--') + $stagedPaths) | Out-Null }
+    $changed = @(Invoke-CatalogGit $resolved @('diff','--cached','--name-only') -split "`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    foreach ($path in $changed) { if ($path -ne 'catalog.private.json' -and $path -notmatch '^(?:roms|saves|covers|theme|playlists)/') { throw 'A publicação privada encontrou arquivo fora da lista permitida.' } }
+    if ($changed.Count -gt 0) {
+        Invoke-CatalogGit $resolved @('commit','-m','Update private game library') | Out-Null
+        $branch = Invoke-CatalogGit $resolved @('symbolic-ref','--short','HEAD')
+        Invoke-CatalogGit $resolved @('push','origin',('HEAD:refs/heads/' + $branch)) | Out-Null
+    }
+    $report = [pscustomobject]@{ copied=@($copied); conflicts=@($conflicts); files=@($files | ForEach-Object Relative) }
+    $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $ImportPath 'private-sync-report.json') -Encoding utf8
+    return [pscustomobject]@{ Published=$true; Count=$Catalog.Count; Copied=$copied.Count; Conflicts=$conflicts.Count; ReportPath=(Join-Path $ImportPath 'private-sync-report.json') }
+}
+
 function Show-GitHubCatalogDialog {
     param([array]$Catalog = @(), [Windows.Forms.IWin32Window]$Owner)
     $savedReview = Get-ManagerCatalogReview

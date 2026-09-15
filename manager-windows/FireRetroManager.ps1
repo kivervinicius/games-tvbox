@@ -416,8 +416,9 @@ function Sync-FireStickToPrivateRepo {
     if ($inventory.ExitCode -ne 0) { throw $inventory.Error }
     $catalog = Merge-GameCatalog -Existing (Get-ImportedCatalog -ImportPath $import.Destination) -Incoming @($inventory.Output)
     $catalog = Add-CatalogMetadata -Catalog $catalog
-    # Publish-PrivateCatalog sanitizes the allowlisted private catalog and never exports ROMs to Pages.
-    $published = Publish-PrivateCatalog -RepoPath $RepoPath -Catalog $catalog
+    # Publish-PrivateLibrary copies only allowlisted personal files to the verified private checkout;
+    # the public projection remains catalog-only and never receives ROMs or saves.
+    $published = Publish-PrivateLibrary -RepoPath $RepoPath -ImportPath $import.Destination -Catalog $catalog
     return [pscustomobject]@{ Import=$import; Published=$published; CatalogCount=$catalog.Count }
 }
 

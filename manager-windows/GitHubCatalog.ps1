@@ -115,6 +115,48 @@ function Export-PublicCatalog {
     return $payload
 }
 
+function New-RemoteLibraryManifest {
+    param(
+        [AllowEmptyCollection()][array]$Catalog = @(),
+        [Parameter(Mandatory)][string]$AssetRoot,
+        [string]$ReleaseTag = 'library-latest',
+        [string]$Repository = 'owner/private-library'
+    )
+    if ($Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') { throw 'Repository must be owner/name without credentials.' }
+    if ($ReleaseTag -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw 'ReleaseTag contains unsupported characters.' }
+    $items = @()
+    foreach ($game in @($Catalog)) {
+        if ($null -eq $game) { continue }
+        $source = [string](Get-CatalogPropertyValue $game 'FullPath')
+        $path = [string](Get-CatalogPropertyValue $game 'path')
+        if ([string]::IsNullOrWhiteSpace($source) -or -not (Test-Path -LiteralPath $source -PathType Leaf)) {
+            $relative = $path -replace '^/sdcard/roms/',''
+            $source = Join-Path $AssetRoot ($relative -replace '/','\')
+        }
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { continue }
+        $relativePath = if ($path -match '^/sdcard/roms/') { $path.Substring('/sdcard/roms/'.Length) } else { [IO.Path]::GetFileName($source) }
+        $assetName = ($relativePath -replace '[\\/]+','-')
+        $hash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+        $length = (Get-Item -LiteralPath $source).Length
+        $id = [string](Get-CatalogPropertyValue $game 'id'); if ([string]::IsNullOrWhiteSpace($id)) { $id = ($relativePath -replace '[^A-Za-z0-9_.-]','_') }
+        $items += [pscustomobject][ordered]@{
+            id=$id; label=[string](Get-CatalogPropertyValue $game 'label'); platform=[string](Get-CatalogPropertyValue $game 'platform')
+            path=(('/sdcard/roms/' + $relativePath).Replace('\\','/')); core_path=[string](Get-CatalogPropertyValue $game 'core_path')
+            image=[string](Get-CatalogPropertyValue $game 'image'); size=[int64]$length; sha256=$hash; assetName=$assetName
+            releaseTag=$ReleaseTag; downloadUrl=('https://github.com/' + $Repository + '/releases/download/' + $ReleaseTag + '/' + [Uri]::EscapeDataString($assetName))
+        }
+    }
+    return [pscustomobject][ordered]@{ version=1; generatedAt=(Get-Date).ToUniversalTime().ToString('o'); repository=$Repository; items=@($items | Sort-Object platform,label) }
+}
+
+function Export-RemoteLibraryManifest {
+    param([Parameter(Mandatory)][string]$DestinationPath, [Parameter(Mandatory)][string]$AssetRoot, [AllowEmptyCollection()][array]$Catalog = @(), [string]$ReleaseTag = 'library-latest', [string]$Repository = 'owner/private-library')
+    if ([IO.Path]::GetFileName($DestinationPath) -ne 'library.manifest.json') { throw 'Use o nome library.manifest.json para o manifesto remoto.' }
+    $manifest=New-RemoteLibraryManifest -Catalog $Catalog -AssetRoot $AssetRoot -ReleaseTag $ReleaseTag -Repository $Repository
+    $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $DestinationPath -Encoding utf8
+    return $manifest
+}
+
 function Invoke-CatalogGit {
     param([string]$RepoPath, [string[]]$Arguments)
     $output = & git -C $RepoPath @Arguments 2>&1

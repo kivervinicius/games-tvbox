@@ -12,6 +12,7 @@ Com ele você pode:
 - buscar jogos, filtrar plataformas e abrir favoritos pelo controle;
 - personalizar slides, capas, títulos e legendas sem editar o app;
 - preservar ROMs, saves e configurações do RetroArch durante atualizações.
+- sincronizar novos jogos diretamente em vários Fire Sticks, com uso offline e progresso visível.
 
 → [Comece pelo Quick Start](docs/quick-start.md) · [Veja a demonstração](docs/assets/screenshots/launcher-interface.png) · [Leia o manual completo](docs/index.md)
 

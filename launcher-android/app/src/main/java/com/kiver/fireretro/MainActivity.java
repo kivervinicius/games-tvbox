@@ -1,6 +1,7 @@
 package com.kiver.fireretro;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -87,6 +88,8 @@ public class MainActivity extends Activity {
     private String searchQuery = "";
     private long catalogLastModified = -1L;
     private long catalogLength = -1L;
+    private RemoteLibrarySync remoteSync;
+    private TextView remoteStatusView;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -99,15 +102,18 @@ public class MainActivity extends Activity {
         if (externalCatalogChanged()) buildScreen();
         updateControllerStatus();
         scheduleCarousel();
+        startRemoteSync();
     }
 
     @Override protected void onPause() {
         carouselHandler.removeCallbacks(carouselTask);
+        if (remoteSync != null) remoteSync.stop();
         super.onPause();
     }
 
     @Override protected void onDestroy() {
         carouselHandler.removeCallbacks(carouselTask);
+        if (remoteSync != null) remoteSync.close();
         super.onDestroy();
     }
 
@@ -129,7 +135,7 @@ public class MainActivity extends Activity {
         page.setPadding(scaled(38), scaled(14), scaled(38), scaled(12));
         page.setBackgroundColor(Color.rgb(6, 14, 43));
         page.addView(createHero(), new LinearLayout.LayoutParams(-1, headerHeight));
-        page.addView(createLibraryControls(restoredIndex), new LinearLayout.LayoutParams(-1, scaled(122)));
+        page.addView(createLibraryControls(restoredIndex), new LinearLayout.LayoutParams(-1, scaled(154)));
 
         stickyPlatformView = new TextView(this);
         stickyPlatformView.setText("TODOS OS JOGOS");
@@ -260,6 +266,14 @@ public class MainActivity extends Activity {
         LinearLayout controls = new LinearLayout(this);
         controls.setOrientation(LinearLayout.VERTICAL);
         controls.setPadding(scaled(6), scaled(8), scaled(6), scaled(4));
+        remoteStatusView = new TextView(this);
+        remoteStatusView.setText("SINCRONIZAÇÃO ONLINE: desativada · selecione para configurar");
+        remoteStatusView.setTextColor(0xFFBBD2FF); remoteStatusView.setTextSize(TypedValue.COMPLEX_UNIT_PX, scaled(13));
+        remoteStatusView.setGravity(Gravity.CENTER_VERTICAL); remoteStatusView.setPadding(scaled(12), 0, scaled(12), 0);
+        remoteStatusView.setFocusable(true); remoteStatusView.setContentDescription("Sincronização online. Pressione selecionar para configurar.");
+        remoteStatusView.setBackground(panelBackground(0x99102750, 0x6645D7EC, scaled(1), scaled(10)));
+        remoteStatusView.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { showRemoteSettings(); } });
+        controls.addView(remoteStatusView, new LinearLayout.LayoutParams(-1, scaled(32)));
         HorizontalScrollView platformScroll = new HorizontalScrollView(this);
         platformScroll.setHorizontalScrollBarEnabled(false);
         LinearLayout platforms = new LinearLayout(this);
@@ -283,6 +297,29 @@ public class MainActivity extends Activity {
         });
         controls.addView(searchView, new LinearLayout.LayoutParams(-1, scaled(54)));
         return controls;
+    }
+
+    private void startRemoteSync() {
+        if (remoteStatusView == null) return;
+        RemoteLibrarySettings.Settings settings = RemoteLibrarySettings.load(this);
+        if (!settings.enabled || settings.manifestUrl.trim().isEmpty()) { remoteStatusView.setText("SINCRONIZAÇÃO ONLINE: desativada · selecione para configurar"); return; }
+        if (remoteSync != null) remoteSync.close();
+        remoteSync = new RemoteLibrarySync(new File("/sdcard/roms"), EXTERNAL_CATALOG_FILE, new File(COVER_DIRECTORY));
+        remoteStatusView.setText("SINCRONIZAÇÃO ONLINE: verificando…");
+        remoteSync.start(settings.manifestUrl, settings.token, 120L * 1024L * 1024L, new RemoteLibrarySync.Listener() {
+            @Override public void onProgress(final String id, final String label, final long downloaded, final long total, final int remaining) { runOnUiThread(new Runnable() { public void run() { if (remoteStatusView != null) remoteStatusView.setText("BAIXANDO: " + label + "  " + (total > 0 ? downloaded * 100 / total : 0) + "%  ·  " + remaining + " pendente(s)"); } }); }
+            @Override public void onItemInstalled(final String id, final String label) { runOnUiThread(new Runnable() { public void run() { if (remoteStatusView != null) remoteStatusView.setText("NOVO JOGO: " + label + "  ·  catálogo atualizado"); if (externalCatalogChanged()) buildScreen(); } }); }
+            @Override public void onError(final String id, final String label, final String message) { runOnUiThread(new Runnable() { public void run() { if (remoteStatusView != null) remoteStatusView.setText("SINCRONIZAÇÃO: " + message); } }); }
+            @Override public void onIdle() { runOnUiThread(new Runnable() { public void run() { if (remoteStatusView != null && remoteStatusView.getText().toString().startsWith("SINCRONIZAÇÃO ONLINE")) remoteStatusView.setText("SINCRONIZAÇÃO ONLINE: atualizada"); } }); }
+        });
+    }
+
+    private void showRemoteSettings() {
+        RemoteLibrarySettings.Settings current = RemoteLibrarySettings.load(this);
+        LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(scaled(24), scaled(8), scaled(24), 0);
+        final EditText url = new EditText(this); url.setHint("URL HTTPS do library.manifest.json"); url.setSingleLine(true); url.setText(current.manifestUrl); box.addView(url, new LinearLayout.LayoutParams(-1, scaled(52)));
+        final EditText token = new EditText(this); token.setHint("Token somente leitura do repositório privado"); token.setSingleLine(true); token.setInputType(0x00000081); box.addView(token, new LinearLayout.LayoutParams(-1, scaled(52)));
+        new AlertDialog.Builder(this).setTitle("Biblioteca online").setMessage("A credencial fica protegida neste Fire Stick e nunca vai para o catálogo.").setView(box).setNegativeButton("Cancelar", null).setPositiveButton("Salvar", (dialog, which) -> { String value = token.getText().toString(); if (value.isEmpty()) value = current.token; String endpoint = url.getText().toString().trim(); RemoteLibrarySettings.save(this, new RemoteLibrarySettings.Settings(endpoint, value, !endpoint.isEmpty())); startRemoteSync(); }).show();
     }
 
     private TextView platformButton(final String platform, final int restoredIndex) {
@@ -392,7 +429,8 @@ public class MainActivity extends Activity {
         } else coverArea.addView(createMissingCover(game), new FrameLayout.LayoutParams(-1, -1));
         card.addView(coverArea, new LinearLayout.LayoutParams(-1, scaled(277)));
         TextView label = new TextView(this);
-        label.setText(game.label); label.setTextColor(Color.WHITE); label.setTextSize(TypedValue.COMPLEX_UNIT_PX, scaled(15)); label.setGravity(Gravity.CENTER);
+        boolean isNew = game.downloadedAt > 0 && (System.currentTimeMillis() - game.downloadedAt) < 7L * 24L * 60L * 60L * 1000L;
+        label.setText(isNew ? "NOVO  ·  " + game.label : game.label); label.setTextColor(isNew ? 0xFF8FFFE0 : Color.WHITE); label.setTextSize(TypedValue.COMPLEX_UNIT_PX, scaled(15)); label.setGravity(Gravity.CENTER);
         label.setIncludeFontPadding(false); label.setMaxLines(2); label.setEllipsize(TextUtils.TruncateAt.END);
         card.addView(label, new LinearLayout.LayoutParams(-1, scaled(43)));
         card.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View view) { rememberGame(gameIndex); launch(game); } });
@@ -488,7 +526,7 @@ public class MainActivity extends Activity {
     private List<Game> readGames() {
         games.clear();
         for (CatalogStore.CatalogGame catalogGame : CatalogStore.load(this, new File("/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json"))) {
-            games.add(new Game(catalogGame.label, catalogGame.path, catalogGame.corePath, catalogGame.platform, catalogGame.image));
+            games.add(new Game(catalogGame.label, catalogGame.path, catalogGame.corePath, catalogGame.platform, catalogGame.image, catalogGame.downloadedAt));
         }
         return games;
     }
@@ -527,5 +565,5 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(); intent.setComponent(new ComponentName(RETROARCH, "com.retroarch.browser.retroactivity.RetroActivityFuture")); intent.putExtra("ROM", game.path); intent.putExtra("LIBRETRO", game.core); intent.putExtra("CONFIGFILE", RETROARCH_CONFIG); startActivity(intent);
     }
     private static class Slide { final String image, title, caption; Slide(String image, String title, String caption) { this.image = image; this.title = title; this.caption = caption; } }
-    private static class Game { final String label, path, core, platform, image; Game(String label, String path, String core, String platform, String image) { this.label = label; this.path = path; this.core = core; this.platform = platform; this.image = image; } }
+    private static class Game { final String label, path, core, platform, image; final long downloadedAt; Game(String label, String path, String core, String platform, String image, long downloadedAt) { this.label = label; this.path = path; this.core = core; this.platform = platform; this.image = image; this.downloadedAt = downloadedAt; } }
 }

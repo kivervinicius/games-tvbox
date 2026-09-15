@@ -2,6 +2,7 @@
     <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="28" />
     <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application android:theme="@style/AppTheme" android:label="Jogos Retro" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner" android:resizeableActivity="true">
         <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="true" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner">
         </activity>

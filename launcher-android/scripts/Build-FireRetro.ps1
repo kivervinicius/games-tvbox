@@ -42,6 +42,8 @@ $sourceFiles = @(
     (Join-Path $generated 'com\kiver\fireretro\R.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\LauncherState.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ThemeState.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\RemoteLibrarySettings.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\RemoteLibrarySync.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\CatalogStore.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\MainActivity.java')
 )

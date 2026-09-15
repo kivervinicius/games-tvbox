@@ -63,7 +63,7 @@ public final class CatalogStore {
             result.add(new CatalogGame(item.optString("label", "Jogo"), path,
                     item.optString("core_path", ""), item.optString("platform", "Outros"),
                     item.optString("image", ""), item.optString("description", ""),
-                    item.optInt("year", 0), tags, item.optBoolean("publicDownload", false)));
+                    item.optInt("year", 0), tags, item.optBoolean("publicDownload", false), item.optLong("downloadedAt", 0L)));
         }
         return result;
     }
@@ -72,13 +72,13 @@ public final class CatalogStore {
         public final String label, path, corePath, platform, image, description;
         public final int year;
         public final List<String> tags;
-        public final boolean publicDownload;
+        public final boolean publicDownload; public final long downloadedAt;
 
         CatalogGame(String label, String path, String corePath, String platform, String image,
-                    String description, int year, List<String> tags, boolean publicDownload) {
+                    String description, int year, List<String> tags, boolean publicDownload, long downloadedAt) {
             this.label = label; this.path = path; this.corePath = corePath; this.platform = platform;
             this.image = image; this.description = description; this.year = year;
-            this.tags = Collections.unmodifiableList(new ArrayList<>(tags)); this.publicDownload = publicDownload;
+            this.tags = Collections.unmodifiableList(new ArrayList<>(tags)); this.publicDownload = publicDownload; this.downloadedAt = downloadedAt;
         }
     }
 }

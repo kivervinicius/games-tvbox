@@ -11,10 +11,16 @@ $script:CacheRoot = Join-Path $env:LOCALAPPDATA 'FireRetroManager'
 $script:SettingsPath = Join-Path $script:CacheRoot 'settings.json'
 $script:ThemeCacheRoot = Join-Path $script:CacheRoot 'theme'
 $script:ThemeConfigPath = Join-Path $script:ThemeCacheRoot 'slides.json'
+$script:MetadataProviderConfigPath = Join-Path $script:CacheRoot 'metadata-provider.json'
 $script:RemoteThemeRoot = '/sdcard/Android/data/com.kiver.fireretro/files/theme'
 $script:RemoteCatalogPath = '/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json'
 $script:RemoteCoverRoot = '/sdcard/Android/data/com.kiver.fireretro/files/covers'
 $script:RomExtensions = @('.nes','.nez','.sfc','.smc','.fig','.md','.gen','.sms','.gba','.gb','.gbc','.iso','.chd','.cue','.bin','.zip','.7z')
+
+if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+    $metadataProviders = Join-Path $PSScriptRoot 'MetadataProviders.ps1'
+    if (Test-Path -LiteralPath $metadataProviders) { . $metadataProviders }
+}
 
 function Load-ManagerSettings {
     if (Test-Path -LiteralPath $script:SettingsPath) {
@@ -134,6 +140,34 @@ function Convert-LocalCatalogGame {
     $relativePath = ([string]$Game.RelativePath).Replace('\', '/').TrimStart('/')
     if ([string]::IsNullOrWhiteSpace($relativePath)) { return $null }
     return New-RemoteCatalogGame -Path "/sdcard/roms/$relativePath"
+}
+
+function Get-ConfiguredMetadataProvider {
+    # Provider credentials are read only from the local Manager cache, never from a catalog.
+    if (-not (Test-Path -LiteralPath $script:MetadataProviderConfigPath)) { return $null }
+    try { return Get-Content -LiteralPath $script:MetadataProviderConfigPath -Raw | ConvertFrom-Json } catch { return $null }
+}
+
+function Add-CatalogMetadata {
+    param([Parameter(Mandatory)][array]$Catalog)
+    $providerConfig = Get-ConfiguredMetadataProvider
+    $metadataItems = @()
+    $enriched = @($Catalog | ForEach-Object {
+        $game = $_
+        $metadata = Get-GameMetadata -Game $game -ProviderConfig $providerConfig
+        $metadataItems += $metadata
+        $copy = [ordered]@{}
+        foreach ($property in $game.PSObject.Properties) { $copy[$property.Name] = $property.Value }
+        if ([string]::IsNullOrWhiteSpace([string]$copy['label'])) { $copy['label'] = $metadata.label }
+        if ([string]::IsNullOrWhiteSpace([string]$copy['description']) -and -not [string]::IsNullOrWhiteSpace([string]$metadata.description)) { $copy['description'] = $metadata.description }
+        if ($null -eq $copy['year'] -and $null -ne $metadata.year) { $copy['year'] = $metadata.year }
+        if (@($copy['tags']).Count -eq 0 -and @($metadata.tags).Count -gt 0) { $copy['tags'] = @($metadata.tags) }
+        if ([string]::IsNullOrWhiteSpace([string]$copy['image']) -and -not [string]::IsNullOrWhiteSpace([string]$metadata.image)) { $copy['image'] = $metadata.image }
+        if (-not [string]::IsNullOrWhiteSpace([string]$metadata.coverUrl)) { Download-CoverToCache -Url $metadata.coverUrl -GameId ([string]$game.path) | Out-Null }
+        [pscustomobject]$copy
+    })
+    Save-GameMetadataCache -Items $metadataItems | Out-Null
+    return $enriched
 }
 
 function Get-RemoteGameInventory {
@@ -463,6 +497,7 @@ $syncCatalog.Add_Click({
         $localCatalog = @($script:LocalCatalog | ForEach-Object { Convert-LocalCatalogGame -Game $_ } | Where-Object { $null -ne $_ })
         $incomingCatalog = @($remoteInventory.Output) + @($localCatalog)
         $catalog = Merge-GameCatalog -Existing $existing -Incoming $incomingCatalog
+        $catalog = Add-CatalogMetadata -Catalog $catalog
         $result = Sync-CatalogToFireStick -Serial $serial -Catalog $catalog
         if ($result.ExitCode -ne 0) { throw $result.Error }
         $details.Text = "Catálogo sincronizado.`r`nJogos locais: $($script:LocalCatalog.Count)`r`nJogos encontrados no Fire Stick: $($remoteInventory.Output.Count)`r`nItens enviados: $($catalog.Count)`r`n`r`nROMs, saves e configurações não foram alterados."

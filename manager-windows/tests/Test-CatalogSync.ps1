@@ -1,8 +1,45 @@
 $root = Split-Path $PSScriptRoot -Parent
 $app = Join-Path $root 'FireRetroManager.ps1'
+$metadataProvider = Join-Path $root 'MetadataProviders.ps1'
 if (-not (Test-Path $app)) { throw 'FireRetroManager.ps1 is missing' }
+if (-not (Test-Path $metadataProvider)) { throw 'MetadataProviders.ps1 is missing' }
+
+$metadataSource = Get-Content $metadataProvider -Raw
+foreach ($required in @('Get-GameMetadata','Save-GameMetadataCache','Download-CoverToCache','LOCALAPPDATA','ProviderConfig')) {
+    if ($metadataSource -notmatch [regex]::Escape($required)) { throw "Metadata contract missing: $required" }
+}
+
+$metadataTestCache = Join-Path ([IO.Path]::GetTempPath()) ('FireRetroManager-MetadataTest-' + [Guid]::NewGuid().ToString('N'))
+$originalLocalAppData = $env:LOCALAPPDATA
+try {
+    $env:LOCALAPPDATA = $metadataTestCache
+    . $metadataProvider
+    $offlineGame = [pscustomobject]@{ label = 'Sonic The Hedgehog'; path = '/sdcard/roms/megadrive/Sonic The Hedgehog.bin'; image = 'existing-cover'; tags = @('favorito') }
+    $fallback = Get-GameMetadata -Game $offlineGame -ProviderConfig $null
+    if ($fallback.label -ne 'Sonic The Hedgehog') { throw 'Offline metadata must preserve the existing game label.' }
+    if ($fallback.image -ne 'existing-cover') { throw 'Offline metadata must preserve the existing cover.' }
+    if (@($fallback.tags).Count -ne 1) { throw 'Offline metadata must preserve existing tags.' }
+
+    $cachePath = Save-GameMetadataCache -Items @($fallback)
+    if (-not (Test-Path -LiteralPath $cachePath)) { throw 'Metadata cache must be written outside the project.' }
+    if ($cachePath -notlike "$metadataTestCache*") { throw 'Metadata cache must use LOCALAPPDATA rather than the repository.' }
+    $cached = Get-Content -LiteralPath $cachePath -Raw | ConvertFrom-Json
+    if (@($cached.items).Count -ne 1) { throw 'Metadata cache must retain normalized entries.' }
+
+    $invalidCover = Download-CoverToCache -Url 'file:///not-a-network-cover.png' -GameId 'sonic'
+    if ($null -ne $invalidCover) { throw 'Cover downloads must reject non-HTTP URLs.' }
+} finally {
+    $env:LOCALAPPDATA = $originalLocalAppData
+    if (Test-Path -LiteralPath $metadataTestCache) { Remove-Item -LiteralPath $metadataTestCache -Recurse -Force }
+}
 
 $source = Get-Content $app -Raw
+foreach ($required in @('MetadataProviders.ps1','Get-ConfiguredMetadataProvider','Add-CatalogMetadata','Get-GameMetadata','Save-GameMetadataCache','Download-CoverToCache')) {
+    if ($source -notmatch [regex]::Escape($required)) { throw "Manager metadata integration missing: $required" }
+}
+if ($source -match 'catalog\.public\.json.*(?:apiKey|ApiKey|Authorization)|(?:apiKey|ApiKey|Authorization).*catalog\.public\.json') {
+    throw 'Metadata credentials must never be written to the public catalog.'
+}
 foreach ($required in @('Get-RemoteGameInventory','Get-LocalGameCatalog','Convert-LocalCatalogGame','Merge-GameCatalog','Sync-CatalogToFireStick','Get-RemoteThemeInventory','shell','find','adb pull','pull','adb push','push','mkdir','files/catalog/games.json','core_path','Mega Drive','PlayStation','.gb','.gbc')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Catalog sync contract missing: $required" }
 }
@@ -67,6 +104,21 @@ Assert-Equal $merged.Count 2 'Merge must deduplicate local and existing catalog 
 $preserved = @($merged | Where-Object { $_.path -eq $manual.path })[0]
 Assert-Equal $preserved.label 'Título editado' 'Merge must preserve the manually edited label.'
 Assert-Equal $preserved.description 'Preservar edição manual' 'Merge must preserve manual catalog fields.'
+
+$managerMetadataCache = Join-Path ([IO.Path]::GetTempPath()) ('FireRetroManager-IntegrationTest-' + [Guid]::NewGuid().ToString('N'))
+$managerOriginalLocalAppData = $env:LOCALAPPDATA
+try {
+    $env:LOCALAPPDATA = $managerMetadataCache
+    $script:MetadataProviderConfigPath = Join-Path $managerMetadataCache 'FireRetroManager\metadata-provider.json'
+    $enriched = Add-CatalogMetadata -Catalog @($manual)
+    Assert-Equal $enriched.Count 1 'Metadata enrichment must retain every catalog item offline.'
+    Assert-Equal $enriched[0].label 'Título editado' 'Metadata enrichment must preserve manual labels.'
+    Assert-Equal $enriched[0].description 'Preservar edição manual' 'Metadata enrichment must preserve manual descriptions.'
+    if (-not (Test-Path -LiteralPath (Join-Path $managerMetadataCache 'FireRetroManager\metadata.json'))) { throw 'Manager metadata enrichment must save an external cache.' }
+} finally {
+    $env:LOCALAPPDATA = $managerOriginalLocalAppData
+    if (Test-Path -LiteralPath $managerMetadataCache) { Remove-Item -LiteralPath $managerMetadataCache -Recurse -Force }
+}
 
 $script:CacheRoot = Join-Path ([IO.Path]::GetTempPath()) ('FireRetroManager-Test-' + [Guid]::NewGuid().ToString('N'))
 try {

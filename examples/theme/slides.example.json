@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "autoAdvanceSeconds": 5,
+  "overlayOpacity": 70,
+  "slides": [
+    {
+      "id": "welcome",
+      "image": "welcome.png",
+      "title": "JOGOS RETRO",
+      "caption": "Clássicos prontos para jogar"
+    }
+  ]
+}

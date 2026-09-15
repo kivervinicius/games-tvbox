@@ -1,0 +1,697 @@
+{
+  "items": [
+    {
+      "label": "Super Mario Kart",
+      "path": "/sdcard/roms/snes/Super Mario Kart (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_mario_kart_snes"
+    },
+    {
+      "label": "Mario Kart: Super Circuit",
+      "path": "/sdcard/roms/gba/Mario Kart - Super Circuit (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_mario_kart_gba"
+    },
+    {
+      "label": "Crash Team Racing",
+      "path": "/sdcard/roms/ps/CTR - Crash Team Racing (E) (No EDC) [SCES-02105].chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_crash_team"
+    },
+    {
+      "label": "Need for Speed III",
+      "path": "/sdcard/roms/ps/Need for Speed III - Hot Pursuit (E) [SLES-01154].chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_need_speed"
+    },
+    {
+      "label": "Sonic the Hedgehog",
+      "path": "/sdcard/roms/megadrive/Sonic The Hedgehog (USA, Europe, Brazil) (En).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_sonic"
+    },
+    {
+      "label": "Super Mario World",
+      "path": "/sdcard/roms/snes/Super Mario World (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_mario_world"
+    },
+    {
+      "label": "Donkey Kong Country",
+      "path": "/sdcard/roms/snes/Donkey Kong Country (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_donkey_kong"
+    },
+    {
+      "label": "Crash Bandicoot",
+      "path": "/sdcard/roms/ps/Crash Bandicoot (USA).chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_crash"
+    },
+    {
+      "label": "Hercules",
+      "path": "/sdcard/roms/ps/Hercules.chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_hercules"
+    },
+    {
+      "label": "Bomberman",
+      "path": "/sdcard/roms/ps/Bomberman (E) [SLES-01893].chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_bomberman"
+    },
+    {
+      "label": "Teenage Mutant Ninja Turtles IV: Turtles in Time",
+      "path": "/sdcard/roms/snes/Teenage Mutant Ninja Turtles IV - Turtles in Time (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_turtles_time"
+    },
+    {
+      "label": "Metal Slug X",
+      "path": "/sdcard/roms/ps/Metal Slug X (USA).chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_metal_slug"
+    },
+    {
+      "label": "ActRaiser (USA)",
+      "path": "/sdcard/roms/snes/ActRaiser (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_013"
+    },
+    {
+      "label": "Aladdin (USA)",
+      "path": "/sdcard/roms/snes/Aladdin (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_014"
+    },
+    {
+      "label": "Alex Kidd in Miracle World (USA, Europe)",
+      "path": "/sdcard/roms/megadrive/Alex Kidd in Miracle World (USA, Europe).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_custom_alex_kidd"
+    },
+    {
+      "label": "anguna",
+      "path": "/sdcard/roms/gba/anguna.gba",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_custom_anguna"
+    },
+    {
+      "label": "Bionic Commando (USA)",
+      "path": "/sdcard/roms/nes/Bionic Commando (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_017"
+    },
+    {
+      "label": "Blaster Master (USA)",
+      "path": "/sdcard/roms/nes/Blaster Master (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_018"
+    },
+    {
+      "label": "Breath of Fire II (USA)",
+      "path": "/sdcard/roms/snes/Breath of Fire II (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_019"
+    },
+    {
+      "label": "Bubble Bobble (USA)",
+      "path": "/sdcard/roms/nes/Bubble Bobble (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_020"
+    },
+    {
+      "label": "Castlevania III - Dracula's Curse (USA)",
+      "path": "/sdcard/roms/nes/Castlevania III - Dracula's Curse (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_021"
+    },
+    {
+      "label": "cavestory",
+      "path": "/sdcard/roms/megadrive/cavestory.bin",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_custom_cave_story"
+    },
+    {
+      "label": "cheril-the-goddess",
+      "path": "/sdcard/roms/nes/cheril-the-goddess.nes",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_custom_cheril"
+    },
+    {
+      "label": "Chrono Trigger (USA)",
+      "path": "/sdcard/roms/snes/Chrono Trigger (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_024"
+    },
+    {
+      "label": "Contra (USA)",
+      "path": "/sdcard/roms/nes/Contra (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_025"
+    },
+    {
+      "label": "Contra III - The Alien Wars (USA)",
+      "path": "/sdcard/roms/snes/Contra III - The Alien Wars (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_026"
+    },
+    {
+      "label": "Croc - Legend of the Gobbos (USA)",
+      "path": "/sdcard/roms/ps/Croc - Legend of the Gobbos (USA).chd",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/pcsx_rearmed_libretro_android.so",
+      "platform": "PlayStation",
+      "image": "cover_027"
+    },
+    {
+      "label": "Donkey Kong Country 2 - Diddy's Kong Quest (USA) (En,Fr)",
+      "path": "/sdcard/roms/snes/Donkey Kong Country 2 - Diddy's Kong Quest (USA) (En,Fr).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_028"
+    },
+    {
+      "label": "Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr)",
+      "path": "/sdcard/roms/snes/Donkey Kong Country 3 - Dixie Kong's Double Trouble! (USA) (En,Fr).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_029"
+    },
+    {
+      "label": "Double Dragon II - The Revenge (USA)",
+      "path": "/sdcard/roms/nes/Double Dragon II - The Revenge (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_030"
+    },
+    {
+      "label": "Dr. Mario (Japan, USA) (En)",
+      "path": "/sdcard/roms/nes/Dr. Mario (Japan, USA) (En).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_031"
+    },
+    {
+      "label": "DuckTales (USA)",
+      "path": "/sdcard/roms/nes/DuckTales (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_032"
+    },
+    {
+      "label": "EarthBound (USA)",
+      "path": "/sdcard/roms/snes/EarthBound (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_033"
+    },
+    {
+      "label": "Excitebike (Japan, USA) (En)",
+      "path": "/sdcard/roms/nes/Excitebike (Japan, USA) (En).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_034"
+    },
+    {
+      "label": "F-Zero (USA)",
+      "path": "/sdcard/roms/snes/F-Zero (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_035"
+    },
+    {
+      "label": "Final Fantasy (USA)",
+      "path": "/sdcard/roms/nes/Final Fantasy (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_036"
+    },
+    {
+      "label": "Final Fantasy III (USA)",
+      "path": "/sdcard/roms/snes/Final Fantasy III (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_037"
+    },
+    {
+      "label": "furryrpg",
+      "path": "/sdcard/roms/snes/furryrpg.sfc",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_custom_furry_rpg"
+    },
+    {
+      "label": "Golden Sun (USA, Europe)",
+      "path": "/sdcard/roms/gba/Golden Sun (USA, Europe).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_039"
+    },
+    {
+      "label": "Goof Troop (USA)",
+      "path": "/sdcard/roms/snes/Goof Troop (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_040"
+    },
+    {
+      "label": "Gradius (USA)",
+      "path": "/sdcard/roms/nes/Gradius (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_041"
+    },
+    {
+      "label": "Great Circus Mystery Starring Mickey & Minnie, The (USA)",
+      "path": "/sdcard/roms/snes/Great Circus Mystery Starring Mickey & Minnie, The (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_custom_great_circus"
+    },
+    {
+      "label": "Gunstar Heroes (USA)",
+      "path": "/sdcard/roms/megadrive/Gunstar Heroes (USA).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_043"
+    },
+    {
+      "label": "Jackal (USA)",
+      "path": "/sdcard/roms/nes/Jackal (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_044"
+    },
+    {
+      "label": "Kid Icarus (USA, Europe) (Rev 1) (Virtual Console)",
+      "path": "/sdcard/roms/nes/Kid Icarus (USA, Europe) (Rev 1) (Virtual Console).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_045"
+    },
+    {
+      "label": "Killer Instinct (USA)",
+      "path": "/sdcard/roms/snes/Killer Instinct (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_046"
+    },
+    {
+      "label": "Kirby Super Star (USA)",
+      "path": "/sdcard/roms/snes/Kirby Super Star (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_047"
+    },
+    {
+      "label": "Kirby's Adventure (USA)",
+      "path": "/sdcard/roms/nes/Kirby's Adventure (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_048"
+    },
+    {
+      "label": "Kirby's Avalanche (USA)",
+      "path": "/sdcard/roms/snes/Kirby's Avalanche (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_049"
+    },
+    {
+      "label": "Kirby's Dream Land 3 (USA)",
+      "path": "/sdcard/roms/snes/Kirby's Dream Land 3 (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_050"
+    },
+    {
+      "label": "Legend of Zelda, The - A Link to the Past (USA)",
+      "path": "/sdcard/roms/snes/Legend of Zelda, The - A Link to the Past (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_051"
+    },
+    {
+      "label": "Legend of Zelda, The - The Minish Cap (USA)",
+      "path": "/sdcard/roms/gba/Legend of Zelda, The - The Minish Cap (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_052"
+    },
+    {
+      "label": "Legend of Zelda, The (USA)",
+      "path": "/sdcard/roms/nes/Legend of Zelda, The (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_053"
+    },
+    {
+      "label": "Lion King, The (USA)",
+      "path": "/sdcard/roms/snes/Lion King, The (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_054"
+    },
+    {
+      "label": "Magical Quest Starring Mickey Mouse, The (USA) (Rev 1)",
+      "path": "/sdcard/roms/snes/Magical Quest Starring Mickey Mouse, The (USA) (Rev 1).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_custom_magical_quest"
+    },
+    {
+      "label": "Mario & Luigi - Superstar Saga (USA)",
+      "path": "/sdcard/roms/gba/Mario & Luigi - Superstar Saga (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_custom_mario_luigi"
+    },
+    {
+      "label": "Mario Is Missing! (USA)",
+      "path": "/sdcard/roms/snes/Mario Is Missing! (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_057"
+    },
+    {
+      "label": "Mario Paint (Japan, USA) (En)",
+      "path": "/sdcard/roms/snes/Mario Paint (Japan, USA) (En).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_058"
+    },
+    {
+      "label": "Mario vs. Donkey Kong (USA, Australia)",
+      "path": "/sdcard/roms/gba/Mario vs. Donkey Kong (USA, Australia).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_059"
+    },
+    {
+      "label": "Mega Man 2 (USA)",
+      "path": "/sdcard/roms/nes/Mega Man 2 (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_060"
+    },
+    {
+      "label": "Mega Man X (USA)",
+      "path": "/sdcard/roms/snes/Mega Man X (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_061"
+    },
+    {
+      "label": "Metal Slug Advance (China) (En) (Aftermarket) (Pirate)",
+      "path": "/sdcard/roms/nes/Metal Slug Advance (China) (En) (Aftermarket) (Pirate).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_custom_metal_slug_advance"
+    },
+    {
+      "label": "Metroid - Zero Mission (USA)",
+      "path": "/sdcard/roms/gba/Metroid - Zero Mission (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_063"
+    },
+    {
+      "label": "Metroid (USA)",
+      "path": "/sdcard/roms/nes/Metroid (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_064"
+    },
+    {
+      "label": "Metroid Fusion (USA)",
+      "path": "/sdcard/roms/gba/Metroid Fusion (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_065"
+    },
+    {
+      "label": "Mortal Kombat II (USA)",
+      "path": "/sdcard/roms/snes/Mortal Kombat II (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_066"
+    },
+    {
+      "label": "NBA Jam - Tournament Edition (USA)",
+      "path": "/sdcard/roms/snes/NBA Jam - Tournament Edition (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_067"
+    },
+    {
+      "label": "Ninja Gaiden (USA)",
+      "path": "/sdcard/roms/nes/Ninja Gaiden (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_068"
+    },
+    {
+      "label": "Punch-Out!! (USA)",
+      "path": "/sdcard/roms/nes/Punch-Out!! (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_069"
+    },
+    {
+      "label": "River City Ransom (USA)",
+      "path": "/sdcard/roms/nes/River City Ransom (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_070"
+    },
+    {
+      "label": "Secret of Mana (USA)",
+      "path": "/sdcard/roms/snes/Secret of Mana (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_071"
+    },
+    {
+      "label": "Shinobi III - Return of the Ninja Master (USA) (Beta) (1993-06-29)",
+      "path": "/sdcard/roms/megadrive/Shinobi III - Return of the Ninja Master (USA) (Beta) (1993-06-29).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_custom_shinobi"
+    },
+    {
+      "label": "SimCity (USA)",
+      "path": "/sdcard/roms/snes/SimCity (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_073"
+    },
+    {
+      "label": "Sonic & Knuckles (World)",
+      "path": "/sdcard/roms/megadrive/Sonic & Knuckles (World).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_custom_sonic_knuckles"
+    },
+    {
+      "label": "Sonic The Hedgehog (World) (Sonic Mega Collection)",
+      "path": "/sdcard/roms/megadrive/Sonic The Hedgehog (World) (Sonic Mega Collection).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_075"
+    },
+    {
+      "label": "Star Fox (USA)",
+      "path": "/sdcard/roms/snes/Star Fox (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_076"
+    },
+    {
+      "label": "Street Fighter II Turbo (USA)",
+      "path": "/sdcard/roms/snes/Street Fighter II Turbo (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_077"
+    },
+    {
+      "label": "Streets of Rage (World) (En,Ja)",
+      "path": "/sdcard/roms/megadrive/Streets of Rage (World) (En,Ja).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_custom_streets_rage"
+    },
+    {
+      "label": "Sunset Riders (USA)",
+      "path": "/sdcard/roms/snes/Sunset Riders (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_079"
+    },
+    {
+      "label": "Super Bomberman 2 (Europe)",
+      "path": "/sdcard/roms/snes/Super Bomberman 2 (Europe).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_080"
+    },
+    {
+      "label": "Super C (USA)",
+      "path": "/sdcard/roms/nes/Super C (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_081"
+    },
+    {
+      "label": "Super Castlevania IV (USA)",
+      "path": "/sdcard/roms/snes/Super Castlevania IV (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_082"
+    },
+    {
+      "label": "Super Ghouls 'n Ghosts (USA)",
+      "path": "/sdcard/roms/snes/Super Ghouls 'n Ghosts (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_custom_super_ghouls"
+    },
+    {
+      "label": "Super Mario All-Stars (USA)",
+      "path": "/sdcard/roms/snes/Super Mario All-Stars (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_084"
+    },
+    {
+      "label": "Super Mario Bros. + Duck Hunt (USA)",
+      "path": "/sdcard/roms/nes/Super Mario Bros. + Duck Hunt (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_085"
+    },
+    {
+      "label": "Super Mario Bros. 3 (USA)",
+      "path": "/sdcard/roms/nes/Super Mario Bros. 3 (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_086"
+    },
+    {
+      "label": "Super Mario RPG - Legend of the Seven Stars (USA)",
+      "path": "/sdcard/roms/snes/Super Mario RPG - Legend of the Seven Stars (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_087"
+    },
+    {
+      "label": "Super Mario World 2 - Yoshi's Island (USA)",
+      "path": "/sdcard/roms/snes/Super Mario World 2 - Yoshi's Island (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_088"
+    },
+    {
+      "label": "Super Metroid (Japan, USA) (En,Ja)",
+      "path": "/sdcard/roms/snes/Super Metroid (Japan, USA) (En,Ja).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_089"
+    },
+    {
+      "label": "Super Punch-Out!! (USA)",
+      "path": "/sdcard/roms/snes/Super Punch-Out!! (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_090"
+    },
+    {
+      "label": "Super R-Type (USA)",
+      "path": "/sdcard/roms/snes/Super R-Type (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_091"
+    },
+    {
+      "label": "Super Star Wars (USA)",
+      "path": "/sdcard/roms/snes/Super Star Wars (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_092"
+    },
+    {
+      "label": "Tecmo Super Bowl (USA)",
+      "path": "/sdcard/roms/nes/Tecmo Super Bowl (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_093"
+    },
+    {
+      "label": "Tetris (USA)",
+      "path": "/sdcard/roms/nes/Tetris (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_094"
+    },
+    {
+      "label": "Vigilante (USA, Europe, Brazil) (En)",
+      "path": "/sdcard/roms/megadrive/Vigilante (USA, Europe, Brazil) (En).7z",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/genesis_plus_gx_libretro_android.so",
+      "platform": "Mega Drive",
+      "image": "cover_custom_vigilante"
+    },
+    {
+      "label": "Wario's Woods (USA)",
+      "path": "/sdcard/roms/snes/Wario's Woods (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_096"
+    },
+    {
+      "label": "WarioWare, Inc. - Minigame Mania (Europe) (En,Fr,De,Es,It)",
+      "path": "/sdcard/roms/gba/WarioWare, Inc. - Minigame Mania (Europe) (En,Fr,De,Es,It).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/mgba_libretro_android.so",
+      "platform": "GBA",
+      "image": "cover_097"
+    },
+    {
+      "label": "Zelda II - The Adventure of Link (USA)",
+      "path": "/sdcard/roms/nes/Zelda II - The Adventure of Link (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_098"
+    },
+    {
+      "label": "Zombies Ate My Neighbors (USA)",
+      "path": "/sdcard/roms/snes/Zombies Ate My Neighbors (USA).zip",
+      "core_path": "/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so",
+      "platform": "SNES",
+      "image": "cover_099"
+    }
+  ]
+}

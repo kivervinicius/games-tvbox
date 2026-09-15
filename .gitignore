@@ -1,0 +1,24 @@
+# Builds and local tooling
+build/
+launcher-android/build/
+launcher-android/tests/.build/
+android-sdk/
+
+# Local signing material and runtime caches
+*.keystore
+*.jks
+*.idsig
+.env
+manager-windows/user-data/
+manager-windows/cache/
+
+# User game content and saves
+roms/
+saves/
+*.chd
+*.cue
+*.bin
+*.iso
+*.7z
+*.zip
+*.apk

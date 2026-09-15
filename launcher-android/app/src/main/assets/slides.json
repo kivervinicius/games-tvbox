@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "autoAdvanceSeconds": 5,
+  "overlayOpacity": 70,
+  "slides": [
+    {
+      "id": "kalel-kath",
+      "image": "kalel-kath.png",
+      "title": "KALEL E KATH",
+      "caption": "Jogos nos unem sempre"
+    },
+    {
+      "id": "corrida",
+      "image": "corrida.png",
+      "title": "HORA DA CORRIDA",
+      "caption": "Escolha um jogo e divirta-se"
+    },
+    {
+      "id": "aventura",
+      "image": "aventura.png",
+      "title": "MUNDOS PARA EXPLORAR",
+      "caption": "Aventura para toda a família"
+    },
+    {
+      "id": "retro",
+      "image": "retro.png",
+      "title": "JOGOS RETRO",
+      "caption": "Clássicos prontos para jogar"
+    }
+  ]
+}

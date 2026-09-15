@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "label": "Exemplo de jogo NES",
+      "path": "<PASTA_DE_ROMS>/nes/exemplo.nes",
+      "core_path": "<PASTA_DE_CORES>/fceumm_libretro_android.so",
+      "platform": "NES",
+      "image": "cover_example_nes"
+    }
+  ]
+}

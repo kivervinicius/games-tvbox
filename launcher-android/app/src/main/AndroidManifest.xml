@@ -1,0 +1,16 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.kiver.fireretro" android:versionCode="20260916" android:versionName="0.3.2">
+    <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="28" />
+    <uses-feature android:name="android.software.leanback" android:required="true" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <application android:theme="@style/AppTheme" android:label="Jogos Retro" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner" android:resizeableActivity="true">
+        <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="true" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner">
+        </activity>
+        <activity-alias android:name=".FireTvHome" android:targetActivity=".MainActivity" android:label="Jogos Retro" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+    </application>
+</manifest>

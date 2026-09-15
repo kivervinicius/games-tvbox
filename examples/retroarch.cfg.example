@@ -1,0 +1,3 @@
+# Configuração mínima de exemplo. O RetroArch gera o arquivo final no aparelho.
+input_quit_gamepad_combo = "4"
+quit_press_twice = "false"

@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private static final String RETROARCH_CONFIG = "/sdcard/Android/data/com.retroarch.ra32/files/retroarch.cfg";
     private static final String THEME_DIRECTORY = "/sdcard/Android/data/com.kiver.fireretro/files/theme";
     private static final String COVER_DIRECTORY = "/sdcard/Android/data/com.kiver.fireretro/files/covers";
+    private static final File EXTERNAL_CATALOG_FILE = new File("/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json");
     private static final String PREFS = "fireretro_state";
     private static final String LAST_GAME = "last_game";
     private static final String LAST_SLIDE = "last_slide";
@@ -84,6 +85,8 @@ public class MainActivity extends Activity {
     private List<Game> allGames = new ArrayList<>();
     private String selectedPlatform = "TODOS";
     private String searchQuery = "";
+    private long catalogLastModified = -1L;
+    private long catalogLength = -1L;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -93,6 +96,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        if (externalCatalogChanged()) buildScreen();
         updateControllerStatus();
         scheduleCarousel();
     }
@@ -115,6 +119,7 @@ public class MainActivity extends Activity {
         responsiveColumns = screenWidth >= scaled(1350) ? 5 : (screenWidth >= scaled(900) ? 4 : (screenWidth >= scaled(700) ? 3 : 2));
         headerHeight = Math.max(scaled(174), Math.round(screenHeight * 0.35f));
         allGames = readGames();
+        rememberExternalCatalogVersion();
         readTheme();
         activeSlide = ThemeState.normalizeIndex(getSharedPreferences(PREFS, MODE_PRIVATE).getInt(LAST_SLIDE, 0), slides.size());
         final int restoredIndex = LauncherState.restoreIndex(getSharedPreferences(PREFS, MODE_PRIVATE).getInt(LAST_GAME, 0), allGames.size());
@@ -486,6 +491,15 @@ public class MainActivity extends Activity {
             games.add(new Game(catalogGame.label, catalogGame.path, catalogGame.corePath, catalogGame.platform, catalogGame.image));
         }
         return games;
+    }
+    private boolean externalCatalogChanged() {
+        long modified = EXTERNAL_CATALOG_FILE.isFile() ? EXTERNAL_CATALOG_FILE.lastModified() : -1L;
+        long length = EXTERNAL_CATALOG_FILE.isFile() ? EXTERNAL_CATALOG_FILE.length() : -1L;
+        return modified != catalogLastModified || length != catalogLength;
+    }
+    private void rememberExternalCatalogVersion() {
+        catalogLastModified = EXTERNAL_CATALOG_FILE.isFile() ? EXTERNAL_CATALOG_FILE.lastModified() : -1L;
+        catalogLength = EXTERNAL_CATALOG_FILE.isFile() ? EXTERNAL_CATALOG_FILE.length() : -1L;
     }
     private void readTheme() {
         slides.clear(); File customTheme = new File(THEME_DIRECTORY, "slides.json");

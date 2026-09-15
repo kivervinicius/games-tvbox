@@ -205,9 +205,32 @@ function Get-RemoteCatalog {
     New-Item -ItemType Directory -Path (Split-Path $cachePath) -Force | Out-Null
     # adb pull reads the existing external catalog without changing the Fire Stick.
     $pull = Invoke-Adb @('-s', $Serial, 'pull', $script:RemoteCatalogPath, $cachePath)
-    if ($pull.ExitCode -ne 0) { return @() }
-    if (-not (Test-Path -LiteralPath $cachePath)) { return @() }
-    try { return @(Get-Content -LiteralPath $cachePath -Raw | ConvertFrom-Json | Select-Object -ExpandProperty items) } catch { return @() }
+    if ($pull.ExitCode -ne 0) {
+        $missing = [string]$pull.Error -match '(?i)(?:no such file|does not exist|remote object.*not exist)'
+        return [pscustomobject]@{ IsAvailable=$false; ReadError=(-not $missing); Items=@(); Error=[string]$pull.Error }
+    }
+    if (-not (Test-Path -LiteralPath $cachePath)) {
+        return [pscustomobject]@{ IsAvailable=$false; ReadError=$true; Items=@(); Error='ADB concluiu sem criar a cópia local do catálogo.' }
+    }
+    try {
+        $payload = Get-Content -LiteralPath $cachePath -Raw | ConvertFrom-Json -ErrorAction Stop
+        if ($null -eq $payload.PSObject.Properties['items']) { throw 'O catálogo remoto não contém items.' }
+        return [pscustomobject]@{ IsAvailable=$true; ReadError=$false; Items=@($payload.items); Error='' }
+    } catch {
+        return [pscustomobject]@{ IsAvailable=$false; ReadError=$true; Items=@(); Error=('Não foi possível ler o catálogo remoto: ' + $_.Exception.Message) }
+    }
+}
+
+function Get-CatalogForSync {
+    param([Parameter(Mandatory)][string]$Serial, [AllowEmptyCollection()][array]$Existing = @())
+    $remoteCatalog = Get-RemoteCatalog -Serial $Serial
+    if ($remoteCatalog.ReadError) { throw $remoteCatalog.Error }
+    $remoteInventory = Get-RemoteGameInventory -Serial $Serial
+    if ($remoteInventory.ExitCode -ne 0) { throw $remoteInventory.Error }
+    $localGames = if ($script:Settings -and -not [string]::IsNullOrWhiteSpace([string]$script:Settings.RomFolder)) { Get-LocalGameCatalog -RootPath $script:Settings.RomFolder } else { @() }
+    $localCatalog = @($localGames | ForEach-Object { Convert-LocalCatalogGame -Game $_ } | Where-Object { $null -ne $_ })
+    $incoming = @($remoteCatalog.Items) + @($remoteInventory.Output) + @($localCatalog)
+    return Add-CatalogMetadata -Catalog (Merge-GameCatalog -Existing $Existing -Incoming $incoming)
 }
 
 function Get-NormalizedGamePath {
@@ -654,16 +677,11 @@ $remoteControl.Add_Click({ $result = Set-RemoteControllerProfile -Serial "$($ip.
 $syncCatalog.Add_Click({
     try {
         $serial = "$($ip.Text):5555"
-        $remoteInventory = Get-RemoteGameInventory -Serial $serial
-        if ($remoteInventory.ExitCode -ne 0) { throw $remoteInventory.Error }
-        $existing = Get-RemoteCatalog -Serial $serial
-        $localCatalog = @($script:LocalCatalog | ForEach-Object { Convert-LocalCatalogGame -Game $_ } | Where-Object { $null -ne $_ })
-        $incomingCatalog = @($remoteInventory.Output) + @($localCatalog)
-        $catalog = Merge-GameCatalog -Existing $existing -Incoming $incomingCatalog
-        $catalog = Add-CatalogMetadata -Catalog $catalog
+        $reviewed = Get-ManagerCatalogReview
+        $catalog = Get-CatalogForSync -Serial $serial -Existing $reviewed
         $result = Sync-CatalogToFireStick -Serial $serial -Catalog $catalog
         if ($result.ExitCode -ne 0) { throw $result.Error }
-        $details.Text = "Catálogo sincronizado.`r`nJogos locais: $($script:LocalCatalog.Count)`r`nJogos encontrados no Fire Stick: $($remoteInventory.Output.Count)`r`nItens enviados: $($catalog.Count)`r`n`r`nROMs, saves e configurações não foram alterados."
+        $details.Text = "Catálogo sincronizado.`r`nItens enviados: $($result.Catalog.Count)`r`n`r`nROMs, saves e configurações não foram alterados."
     } catch { $details.Text = $_.Exception.Message }
 })
 $privateImport.Add_Click({

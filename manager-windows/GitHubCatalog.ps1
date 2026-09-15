@@ -25,6 +25,25 @@ function Get-GitHubCredential {
     catch { throw 'Salve a credencial GitHub neste usuário do Windows antes de publicar.' }
 }
 
+function Get-ManagerCatalogReviewPath {
+    return (Join-Path $env:LOCALAPPDATA 'FireRetroManager/catalog-review.json')
+}
+
+function Save-ManagerCatalogReview {
+    param([AllowEmptyCollection()][array]$Catalog = @())
+    $path = Get-ManagerCatalogReviewPath
+    New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force | Out-Null
+    [pscustomobject]@{ version=1; updatedAt=(Get-Date).ToUniversalTime().ToString('o'); items=@($Catalog) } |
+        ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding utf8
+    return $path
+}
+
+function Get-ManagerCatalogReview {
+    $path = Get-ManagerCatalogReviewPath
+    if (-not (Test-Path -LiteralPath $path)) { return @() }
+    try { return @((Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -ErrorAction Stop).items) } catch { return @() }
+}
+
 function Get-PublicCatalogText {
     param($Value, [int]$MaxLength = 2000)
     $text = ([string]$Value).Trim()
@@ -163,6 +182,8 @@ function Publish-PrivateCatalog {
 
 function Show-GitHubCatalogDialog {
     param([array]$Catalog = @(), [Windows.Forms.IWin32Window]$Owner)
+    $savedReview = Get-ManagerCatalogReview
+    if ($savedReview.Count -gt 0) { $Catalog = $savedReview }
     $dialog = [Windows.Forms.Form]::new()
     $dialog.Text = 'Catálogo GitHub — revisão e publicação'
     $dialog.Size = [Drawing.Size]::new(1060,620)
@@ -228,5 +249,5 @@ function Show-GitHubCatalogDialog {
             $message.Text="Catálogo privado publicado: $($result.Count) itens."
         } catch { $message.Text='Não foi possível publicar. Confirme que o checkout está limpo, origin é privado e a credencial tem acesso. Uma falha de push pode deixar um commit local pendente.' }
     })
-    try { [void]$dialog.ShowDialog($Owner) } finally { $tokenInput.Clear(); $dialog.Dispose() }
+    try { [void]$dialog.ShowDialog($Owner) } finally { Save-ManagerCatalogReview -Catalog @(& $collect) | Out-Null; $tokenInput.Clear(); $dialog.Dispose() }
 }

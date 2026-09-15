@@ -55,8 +55,8 @@ if ($source -match 'catalog\.public\.json.*(?:apiKey|ApiKey|Authorization)|(?:ap
 foreach ($required in @('Get-RemoteGameInventory','Get-LocalGameCatalog','Convert-LocalCatalogGame','Merge-GameCatalog','Sync-CatalogToFireStick','Get-RemoteThemeInventory','shell','find','adb pull','pull','adb push','push','mkdir','files/catalog/games.json','core_path','Mega Drive','PlayStation','.gb','.gbc')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Catalog sync contract missing: $required" }
 }
-if ($source -notmatch '(?s)\$localCatalog.*\$incomingCatalog.*Merge-GameCatalog.*\$incomingCatalog') {
-    throw 'Catalog sync must merge local and Fire Stick inventory before sending.'
+if ($source -notmatch '(?s)Get-CatalogForSync.*remoteCatalog.*remoteInventory.*localCatalog.*Merge-GameCatalog') {
+    throw 'Catalog sync preparation must merge local and Fire Stick inventory before sending.'
 }
 if ($source -notmatch [regex]::Escape("'mkdir', '-p', '/sdcard/Android/data/com.kiver.fireretro/files/catalog'")) {
     throw 'Catalog sync must create the external catalog directory before the first push.'
@@ -94,6 +94,31 @@ Assert-Equal $remote.Output.Count 2 'Remote inventory must keep only known ROM e
 $megaBin = @($remote.Output | Where-Object { $_.path -like '*Sonic.bin' })[0]
 Assert-Equal $megaBin.platform 'Mega Drive' 'Mega Drive .bin must not use the PlayStation platform.'
 if ($megaBin.core_path -notmatch 'genesis_plus_gx') { throw 'Mega Drive .bin must use the Genesis Plus GX core.' }
+
+$script:RemoteCatalogPath = '/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json'
+$script:CacheRoot = Join-Path ([IO.Path]::GetTempPath()) ('FireRetroManager-RemoteCatalogTest-' + [Guid]::NewGuid().ToString('N'))
+try {
+    function Invoke-Adb { param([string[]]$Arguments) return [pscustomobject]@{ ExitCode=1; Output=''; Error='remote object does not exist' } }
+    $missingCatalog = Get-RemoteCatalog -Serial 'fake:5555'
+    if ($missingCatalog.IsAvailable -or $missingCatalog.ReadError) { throw 'A missing remote catalog must be distinguishable from a read failure.' }
+    function Invoke-Adb { param([string[]]$Arguments) return [pscustomobject]@{ ExitCode=1; Output=''; Error='device offline' } }
+    $failedCatalog = Get-RemoteCatalog -Serial 'fake:5555'
+    if (-not $failedCatalog.ReadError) { throw 'An ADB read failure must be reported rather than treated as an absent catalog.' }
+    $blocked=$false
+    try { Get-CatalogForSync -Serial 'fake:5555' -Existing @() | Out-Null } catch { $blocked=$true }
+    if (-not $blocked) { throw 'Sync preparation must stop before push when a remote catalog read failed.' }
+} finally {
+    if (Test-Path -LiteralPath $script:CacheRoot) { Remove-Item -LiteralPath $script:CacheRoot -Recurse -Force }
+}
+function Invoke-Adb {
+    param([string[]]$Arguments)
+    [void]$script:AdbCalls.Add(@($Arguments))
+    $joined = $Arguments -join ' '
+    if ($joined -match ' find /sdcard/roms ') {
+        return [pscustomobject]@{ ExitCode = 0; Output = "/sdcard/roms/megadrive/Sonic.bin`n/sdcard/roms/gb/Tetris.gb`n/sdcard/roms/readme.txt"; Error = '' }
+    }
+    return [pscustomobject]@{ ExitCode = 0; Output = 'ok'; Error = '' }
+}
 
 $psBin = New-RemoteCatalogGame -Path '/sdcard/roms/ps/Final Fantasy VII.bin'
 Assert-Equal $psBin.platform 'PlayStation' 'PlayStation .bin must retain the PlayStation platform.'

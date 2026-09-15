@@ -10,6 +10,18 @@ Set-StrictMode -Version Latest
 $strictExport = Export-PublicCatalog -Catalog @($strictLegal)
 Assert (@($strictExport.items).Count -eq 1) 'A legal public item without optional properties must export under StrictMode.'
 Set-StrictMode -Off
+$reviewRoot=Join-Path ([IO.Path]::GetTempPath()) ('github-catalog-review-'+[guid]::NewGuid().ToString('N'))
+$reviewPrior=$env:LOCALAPPDATA
+try {
+    $env:LOCALAPPDATA=$reviewRoot
+    Save-ManagerCatalogReview -Catalog @($strictLegal) | Out-Null
+    $reopened=Get-ManagerCatalogReview
+    Assert (@($reopened).Count -eq 1) 'A reviewed catalog must reopen from private cache.'
+    Assert ($reopened[0].label -eq 'Minimal demo' -and $reopened[0].publicSelected) 'Catalog review flags must round-trip for the next sync.'
+} finally {
+    $env:LOCALAPPDATA=$reviewPrior
+    if (Test-Path -LiteralPath $reviewRoot) { Remove-Item -LiteralPath $reviewRoot -Recurse -Force }
+}
 $commercial = [pscustomobject]@{ label='Commercial'; publicSelected=$true; redistributable=$false; category='commercial' }
 $unselected = [pscustomobject]@{ label='Hidden'; publicSelected=$false; redistributable=$true; category='demo' }
 $export = Export-PublicCatalog -Catalog @($legal,$commercial,$unselected)
@@ -135,6 +147,7 @@ try {
 }
 $manager=Get-Content (Join-Path $root 'manager-windows/FireRetroManager.ps1') -Raw
 Assert ($manager -match 'Show-GitHubCatalogDialog') 'Manager must expose catalog actions.'
+Assert ($manager -match 'Get-ManagerCatalogReview' -and $manager -match 'Get-CatalogForSync') 'The next Manager sync must consume the saved private review.'
 $site=Get-Content (Join-Path $root 'catalog-site/index.html') -Raw
 Assert ($site -match 'catalog.public.json' -and $site -match 'textContent' -and $site -notmatch 'innerHTML') 'Gallery must fetch safely and avoid HTML injection.'
 $workflow=Get-Content (Join-Path $root '.github/workflows/pages.yml') -Raw

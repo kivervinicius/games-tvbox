@@ -239,6 +239,92 @@ function Sync-CatalogToFireStick {
     return Invoke-Adb @('-s', $Serial, 'push', $cachePath, $script:RemoteCatalogPath)
 }
 
+function Test-PrivateImportDestination {
+    param([Parameter(Mandatory)][string]$Destination)
+    $publicRoot = [IO.Path]::GetFullPath($script:ManagerRoot).TrimEnd('\','/')
+    $candidate = [IO.Path]::GetFullPath($Destination).TrimEnd('\','/')
+    if ($candidate.Equals($publicRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        $candidate.StartsWith($publicRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Escolha um destino privado fora do checkout público.'
+    }
+    return $candidate
+}
+
+function New-PrivateImportDirectory {
+    param([string]$Destination)
+    $root = if ([string]::IsNullOrWhiteSpace($Destination)) {
+        Join-Path $script:CacheRoot 'imports'
+    } else {
+        Test-PrivateImportDestination -Destination $Destination
+    }
+    $root = Test-PrivateImportDestination -Destination $root
+    New-Item -ItemType Directory -Path $root -Force | Out-Null
+    do {
+        $name = 'firestick-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0,8)
+        $importPath = Join-Path $root $name
+    } while (Test-Path -LiteralPath $importPath)
+    New-Item -ItemType Directory -Path $importPath -ErrorAction Stop | Out-Null
+    return $importPath
+}
+
+function Import-FireStickLibrary {
+    param([Parameter(Mandatory)][string]$Serial, [string]$Destination)
+    $importPath = New-PrivateImportDirectory -Destination $Destination
+    # Every transfer is adb pull: ROMs, saves, catalog, covers, theme and playlists stay untouched on the Fire Stick.
+    $sources = @(
+        [pscustomobject]@{ Name='ROMs'; Remote='/sdcard/roms'; Local='ROMs'; Required=$true },
+        [pscustomobject]@{ Name='saves'; Remote='/sdcard/Android/data/com.retroarch.ra32/files/saves'; Local='saves'; Required=$false },
+        [pscustomobject]@{ Name='catalog'; Remote=$script:RemoteCatalogPath; Local='catalog/games.json'; Required=$false },
+        [pscustomobject]@{ Name='theme'; Remote=$script:RemoteThemeRoot; Local='theme'; Required=$false },
+        [pscustomobject]@{ Name='covers'; Remote=$script:RemoteCoverRoot; Local='covers'; Required=$false },
+        [pscustomobject]@{ Name='playlists'; Remote='/sdcard/Android/data/com.retroarch.ra32/files/playlists'; Local='playlists'; Required=$false }
+    )
+    $transfers = @()
+    foreach ($source in $sources) {
+        $localPath = Join-Path $importPath $source.Local
+        $parent = Split-Path -Parent $localPath
+        if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+        $pull = Invoke-Adb @('-s', $Serial, 'pull', $source.Remote, $localPath)
+        $transfers += [pscustomobject]@{ name=$source.Name; remote=$source.Remote; local=$localPath; required=$source.Required; exitCode=$pull.ExitCode; error=$pull.Error }
+    }
+    $requiredFailure = @($transfers | Where-Object { $_.required -and $_.exitCode -ne 0 })
+    $report = [ordered]@{
+        version = 1
+        importedAt = (Get-Date).ToUniversalTime().ToString('o')
+        serial = $Serial
+        destination = $importPath
+        transfers = $transfers
+        conflicts = @()
+        preservation = 'Somente adb pull e cópias locais; nenhum arquivo remoto foi removido, movido ou sobrescrito.'
+    }
+    $reportPath = Join-Path $importPath 'import-report.json'
+    $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $reportPath -Encoding utf8
+    if ($requiredFailure.Count -gt 0) {
+        return [pscustomobject]@{ ExitCode=1; Output=$importPath; Error='Não foi possível importar a pasta de ROMs do Fire Stick.'; Destination=$importPath; ReportPath=$reportPath; Transfers=$transfers }
+    }
+    return [pscustomobject]@{ ExitCode=0; Output=$importPath; Error=''; Destination=$importPath; ReportPath=$reportPath; Transfers=$transfers }
+}
+
+function Get-ImportedCatalog {
+    param([Parameter(Mandatory)][string]$ImportPath)
+    $catalogPath = Join-Path $ImportPath 'catalog/games.json'
+    if (-not (Test-Path -LiteralPath $catalogPath)) { return @() }
+    try { return @((Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json).items) } catch { return @() }
+}
+
+function Sync-FireStickToPrivateRepo {
+    param([Parameter(Mandatory)][string]$Serial, [Parameter(Mandatory)][string]$RepoPath)
+    $import = Import-FireStickLibrary -Serial $Serial
+    if ($import.ExitCode -ne 0) { throw $import.Error }
+    $inventory = Get-RemoteGameInventory -Serial $Serial
+    if ($inventory.ExitCode -ne 0) { throw $inventory.Error }
+    $catalog = Merge-GameCatalog -Existing (Get-ImportedCatalog -ImportPath $import.Destination) -Incoming @($inventory.Output)
+    $catalog = Add-CatalogMetadata -Catalog $catalog
+    # Publish-PrivateCatalog sanitizes the allowlisted private catalog and never exports ROMs to Pages.
+    $published = Publish-PrivateCatalog -RepoPath $RepoPath -Catalog $catalog
+    return [pscustomobject]@{ Import=$import; Published=$published; CatalogCount=$catalog.Count }
+}
+
 function Select-CoverImage {
     $dialog = [Windows.Forms.OpenFileDialog]::new()
     $dialog.Title = 'Escolha a capa do jogo'
@@ -472,7 +558,8 @@ function Show-ThemeSlide {
 Refresh-ThemeEditor
 
 $remoteControl = [Windows.Forms.Button]::new(); $remoteControl.Text = 'Enviar configurações do controle'; $remoteControl.Width = 250; $remoteControl.Location = [Drawing.Point]::new(220, 194); $form.Controls.Add($remoteControl); Apply-ButtonStyle $remoteControl -Primary
-$syncCatalog = [Windows.Forms.Button]::new(); $syncCatalog.Text = 'Sincronizar catálogo'; $syncCatalog.Width = 190; $syncCatalog.Location = [Drawing.Point]::new(765, 194); $form.Controls.Add($syncCatalog); Apply-ButtonStyle $syncCatalog -Primary
+$syncCatalog = [Windows.Forms.Button]::new(); $syncCatalog.Text = 'Sincronizar catálogo'; $syncCatalog.Width = 190; $syncCatalog.Location = [Drawing.Point]::new(650, 194); $form.Controls.Add($syncCatalog); Apply-ButtonStyle $syncCatalog -Primary
+$privateImport = [Windows.Forms.Button]::new(); $privateImport.Text = 'Importar e publicar privado'; $privateImport.Width = 220; $privateImport.Location = [Drawing.Point]::new(855, 194); $form.Controls.Add($privateImport); Apply-ButtonStyle $privateImport
 $status = [Windows.Forms.Label]::new(); $status.Text = '●  Desconectado'; $status.AutoSize = $true; $status.Location = [Drawing.Point]::new(490, 202); $status.Font = [Drawing.Font]::new('Segoe UI', 11, [Drawing.FontStyle]::Bold); $status.ForeColor = [Drawing.Color]::FromArgb(255, 195, 90); $form.Controls.Add($status)
 $details = [Windows.Forms.TextBox]::new(); $details.Multiline = $true; $details.ReadOnly = $true; $details.ScrollBars = 'Vertical'; $details.Dock = 'Bottom'; $details.Height = 190; $details.BackColor = [Drawing.Color]::FromArgb(15, 40, 84); $details.ForeColor = [Drawing.Color]::FromArgb(225, 235, 255); $details.Font = [Drawing.Font]::new('Consolas', 10); $details.BorderStyle = 'FixedSingle'; $form.Controls.Add($details)
 
@@ -504,6 +591,22 @@ $syncCatalog.Add_Click({
         $result = Sync-CatalogToFireStick -Serial $serial -Catalog $catalog
         if ($result.ExitCode -ne 0) { throw $result.Error }
         $details.Text = "Catálogo sincronizado.`r`nJogos locais: $($script:LocalCatalog.Count)`r`nJogos encontrados no Fire Stick: $($remoteInventory.Output.Count)`r`nItens enviados: $($catalog.Count)`r`n`r`nROMs, saves e configurações não foram alterados."
+    } catch { $details.Text = $_.Exception.Message }
+})
+$privateImport.Add_Click({
+    try {
+        $folder = [Windows.Forms.FolderBrowserDialog]::new()
+        $folder.Description = 'Escolha a raiz do checkout privado, fora do projeto público'
+        if ($folder.ShowDialog($form) -ne [Windows.Forms.DialogResult]::OK) { return }
+        $confirmation = [Windows.Forms.MessageBox]::Show(
+            $form,
+            'Importar ROMs, saves, catálogo, capas, tema e playlists do Fire Stick para uma área privada local e publicar somente catalog.private.json no checkout selecionado? Esta ação usa somente cópias e não publica ROMs no site público.',
+            'Confirmar importação privada',
+            [Windows.Forms.MessageBoxButtons]::YesNo,
+            [Windows.Forms.MessageBoxIcon]::Warning)
+        if ($confirmation -ne [Windows.Forms.DialogResult]::Yes) { return }
+        $result = Sync-FireStickToPrivateRepo -Serial "$($ip.Text):5555" -RepoPath $folder.SelectedPath
+        $details.Text = "Biblioteca importada para:`r`n$($result.Import.Destination)`r`n`r`nCatálogo privado publicado: $($result.Published.Count) itens.`r`nROMs comerciais, saves e configurações não foram publicados no site público."
     } catch { $details.Text = $_.Exception.Message }
 })
 $coverChoose.Add_Click({ $script:SelectedCover = Select-CoverImage; if ($script:SelectedCover) { if ($coverPreview.Image) { $coverPreview.Image.Dispose(); $coverPreview.Image = $null }; $coverPreview.Image = [Drawing.Image]::FromFile($script:SelectedCover); $details.Text = "Imagem carregada. Escreva um título e selecione Adicionar slide." } })

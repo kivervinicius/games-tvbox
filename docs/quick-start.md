@@ -45,7 +45,13 @@ pwsh -File scripts\Verify-PublicRelease.ps1
 
 O resultado esperado contém `PASS` para layout, launcher, Manager e auditoria pública.
 
-## 5. Usar
+## 5. Sincronizar biblioteca e catálogo
+
+No Manager, **Sincronizar catálogo** atualiza o catálogo local consumido pelo Launcher. Jogos, capas e metadados novos entram por essa sincronização; não é preciso recompilar o APK para esse tipo de atualização. Sem rede, o Launcher conserva o último catálogo válido e usa o catálogo embutido como fallback.
+
+Para preservar uma biblioteca que já está no Fire Stick, use **Importar e publicar privado**, escolha um checkout Git privado fora deste projeto e confirme a ação. A importação faz cópias locais em `%LOCALAPPDATA%\FireRetroManager\imports` e nunca publica ROMs comerciais no site público. Veja [biblioteca privada](operations/private-library.md) para ADB, DPAPI, GitHub Pages e etapas manuais.
+
+## 6. Usar
 
 No Manager, escolha a pasta do seu acervo autorizado e instale o APK gerado. Abra `Jogos Retro`, selecione uma plataforma, escolha uma capa e pressione A para iniciar.
 

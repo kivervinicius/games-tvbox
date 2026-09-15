@@ -10,5 +10,8 @@
 | Dados pessoais ficam fora do projeto | `.gitignore`, cache `%LOCALAPPDATA%` | `scripts/Test-PublicLayout.ps1` e auditoria de extensões |
 | Handoff para RetroArch | `MainActivity.launch` e constantes `ROM`, `LIBRETRO`, `CONFIGFILE` | `project.tests.ps1` |
 | Saída configurável | `examples/retroarch.cfg.example` | `project.tests.ps1` |
+| Importação preservacionista do Fire Stick | `Import-FireStickLibrary` usa somente `adb pull` e grava `import-report.json` fora do checkout público | `manager-windows/tests/Test-DeviceImport.ps1` |
+| Catálogo atualizado sem recompilar APK | `Sync-CatalogToFireStick` grava o catálogo externo e `CatalogStore` mantém fallback embutido | `Test-CatalogSync.ps1`, `catalog-store.tests.ps1` |
+| Biblioteca e publicação privadas | `Sync-FireStickToPrivateRepo`, `Publish-PrivateCatalog` e credencial DPAPI | `Test-DeviceImport.ps1`, `Test-GitHubCatalog.ps1` |
 
 Referências externas usadas na documentação: [Android Debug Bridge](https://developer.android.com/tools/adb), [Install and Run Your App on Fire TV](https://developer.amazon.com/docs/fire-tv/installing-and-running-your-app.html), [Developer Tools Menu](https://developer.amazon.com/docs/fire-tv/developer-tools.html) e [Setting Up Your Development Environment](https://developer.amazon.com/docs/fire-tv/setting-up-your-development-environment.html).

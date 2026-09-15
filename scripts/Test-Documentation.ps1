@@ -1,7 +1,9 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $missing = @()
 foreach ($file in Get-ChildItem -LiteralPath $root -Recurse -File -Filter *.md) {
+    # Internal implementation/review packages can contain diff snippets, not documentation links.
+    if ($file.FullName.Substring($root.Length + 1) -match '^\.superpowers[\\/]') { continue }
     $text = Get-Content -LiteralPath $file.FullName -Raw
     foreach ($match in [regex]::Matches($text, '\]\(([^)]+)\)')) {
         $link = $match.Groups[1].Value.Trim().Trim('<','>')

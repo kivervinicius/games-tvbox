@@ -1,4 +1,4 @@
-param([string]$InitialIp = '')
+﻿param([string]$InitialIp = '')
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -18,6 +18,8 @@ $script:RemoteCoverRoot = '/sdcard/Android/data/com.kiver.fireretro/files/covers
 $script:RomExtensions = @('.nes','.nez','.sfc','.smc','.fig','.md','.gen','.sms','.gba','.gb','.gbc','.iso','.chd','.cue','.bin','.zip','.7z')
 
 if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+    $githubCatalog = Join-Path $PSScriptRoot 'GitHubCatalog.ps1'
+    if (Test-Path -LiteralPath $githubCatalog) { . $githubCatalog }
     $metadataProviders = Join-Path $PSScriptRoot 'MetadataProviders.ps1'
     if (Test-Path -LiteralPath $metadataProviders) { . $metadataProviders }
 }
@@ -423,6 +425,7 @@ $remoteOpen = [Windows.Forms.Button]::new(); $remoteOpen.Text = 'Abrir FireRetro
 $remoteRestart = [Windows.Forms.Button]::new(); $remoteRestart.Text = 'Reiniciar FireRetro'; $remoteRestart.Width = 150; $remoteRestart.Location = [Drawing.Point]::new(925, 134); $form.Controls.Add($remoteRestart)
 Apply-ButtonStyle $choose; Apply-ButtonStyle $remoteOpen; Apply-ButtonStyle $remoteRestart
 
+$githubButton = [Windows.Forms.Button]::new(); $githubButton.Text = 'Catálogo GitHub'; $githubButton.Width = 150; $githubButton.Location = [Drawing.Point]::new(765, 134); $form.Controls.Add($githubButton); Apply-ButtonStyle $githubButton
 $coverGroup = [Windows.Forms.GroupBox]::new(); $coverGroup.Text = 'Slides e aparência'; $coverGroup.ForeColor = [Drawing.Color]::FromArgb(116, 239, 255); $coverGroup.Font = [Drawing.Font]::new('Segoe UI', 11, [Drawing.FontStyle]::Bold); $coverGroup.Location = [Drawing.Point]::new(220, 244); $coverGroup.Size = [Drawing.Size]::new(855, 238); $form.Controls.Add($coverGroup)
 $gameNameLabel = [Windows.Forms.Label]::new(); $gameNameLabel.Text = 'Título do slide'; $gameNameLabel.AutoSize = $true; $gameNameLabel.Location = [Drawing.Point]::new(18, 30); $coverGroup.Controls.Add($gameNameLabel)
 $gameName = [Windows.Forms.TextBox]::new(); $gameName.Width = 300; $gameName.Location = [Drawing.Point]::new(18, 54); $coverGroup.Controls.Add($gameName)
@@ -507,6 +510,13 @@ $coverChoose.Add_Click({ $script:SelectedCover = Select-CoverImage; if ($script:
 $coverSave.Add_Click({ try { if (-not $script:SelectedCover) { throw 'Primeiro escolha uma imagem para o novo slide.' }; $titleText = $gameName.Text.Trim(); if ([string]::IsNullOrWhiteSpace($titleText)) { throw 'Informe o título do slide.' }; $newSlide = Add-ThemeSlideImage -SourcePath $script:SelectedCover -Title $titleText -Caption $script:ThemeCaption.Text.Trim(); [void]$script:ThemeSlides.Add($newSlide); $script:SelectedCover = $null; Refresh-ThemeEditor; $gameSelect.SelectedIndex = $script:ThemeSlides.Count - 1; $details.Text = "Slide adicionado ao tema. Clique em Salvar no Fire Stick quando terminar." } catch { $details.Text = $_.Exception.Message } })
 $script:ThemeUpdate.Add_Click({ try { if ($gameSelect.SelectedIndex -lt 0) { throw 'Escolha um slide para atualizar.' }; $slide = $script:ThemeSlides[$gameSelect.SelectedIndex]; $slide.Title = $gameName.Text.Trim(); $slide.Caption = $script:ThemeCaption.Text.Trim(); if ([string]::IsNullOrWhiteSpace($slide.Title)) { throw 'Informe o título do slide.' }; $script:ThemeSlides[$gameSelect.SelectedIndex] = $slide; Refresh-ThemeEditor; $gameSelect.SelectedIndex = [Math]::Max(0, $gameSelect.SelectedIndex); $details.Text = 'Texto do slide atualizado no cache local.' } catch { $details.Text = $_.Exception.Message } })
 $script:ThemeSend.Add_Click({ try { $serial = "$($ip.Text):5555"; $result = Push-ThemeToFireStick -Serial $serial -Slides @($script:ThemeSlides) -AutoAdvanceSeconds ([int]$script:ThemeInterval.Value) -OverlayOpacity ([int]$script:ThemeOpacity.Value); if ($result.ExitCode -ne 0) { throw $result.Error }; Restart-FireRetroRemote -Serial $serial | Out-Null; $details.Text = "Tema salvo e enviado ao Fire Stick.`r`nO FireRetro foi reiniciado para mostrar o novo carrossel." } catch { $details.Text = $_.Exception.Message } })
+$githubButton.Add_Click({
+    try {
+        $catalogFile=Join-Path $script:CacheRoot 'catalog/games.json'
+        $reviewCatalog=if (Test-Path -LiteralPath $catalogFile) { @((Get-Content -LiteralPath $catalogFile -Raw | ConvertFrom-Json).items) } else { @($script:LocalCatalog | ForEach-Object { Convert-LocalCatalogGame $_ }) }
+        Show-GitHubCatalogDialog -Catalog $reviewCatalog -Owner $form
+    } catch { $details.Text='Não foi possível abrir o catálogo para revisão. Sincronize o catálogo e tente novamente.' }
+})
 $navHome.Add_Click({ $ip.Focus() })
 $navTheme.Add_Click({ $gameName.Focus() })
 $navLibrary.Add_Click({ $choose.Focus() })

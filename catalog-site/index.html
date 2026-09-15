@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Games TV Box · Catálogo</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#0e1729;color:#eaf0fb}*{box-sizing:border-box}body{margin:0}main{max-width:1150px;margin:auto;padding:56px 24px}.brand{color:#75e4c4;letter-spacing:.15em;font-size:.8rem}h1{font-size:clamp(2.4rem,6vw,4rem);margin:14px 0}header p{max-width:640px;color:#b3c0d5;line-height:1.6}.filters{display:flex;gap:20px;flex-wrap:wrap;margin:34px 0}label{display:grid;gap:8px;flex:1;min-width:220px}input,select{font:inherit;padding:13px;border:1px solid #43536d;border-radius:8px;background:#18243a;color:inherit}input:focus,select:focus,a:focus{outline:3px solid #75e4c4;outline-offset:3px}#games{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px}article{background:#18243a;border:1px solid #33435d;border-radius:14px;overflow:hidden}article .cover{height:220px;background:#223954;display:grid;place-items:center;color:#aabbd2}img{width:100%;height:220px;object-fit:contain}.body{padding:20px}h2{margin:10px 0;font-size:1.2rem}.meta{color:#75e4c4;font-size:.85rem}article p{color:#b3c0d5;line-height:1.5}a{color:#9df1d6;display:inline-block;padding:10px 0}#status{color:#b3c0d5;min-height:28px}footer{margin-top:48px;color:#8699b6;font-size:.85rem}
+</style>
+</head>
+<body><main><header><div class="brand">GAMES TV BOX</div><h1>Jogos para descobrir.</h1><p>Uma seleção de homebrews, demos e jogos de domínio público. Explore por plataforma e conheça cada projeto.</p></header>
+<section class="filters" aria-label="Filtros do catálogo"><label>Buscar jogo<input id="search" type="search" placeholder="Título, descrição ou tag"></label><label>Plataforma<select id="platform"><option value="">Todas as plataformas</option></select></label></section>
+<p id="status" role="status" aria-live="polite">Carregando catálogo…</p><section id="games" aria-label="Jogos"></section><footer>Downloads disponíveis somente quando autorizados para redistribuição. Sem login para navegar.</footer></main>
+<script>
+'use strict';
+const search=document.querySelector('#search'), platform=document.querySelector('#platform'), games=document.querySelector('#games'), status=document.querySelector('#status');
+let catalog=[];
+const normalize=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
+function node(tag,text,className){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(className)el.className=className;return el;}
+function legalLink(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash&&u.hostname.includes('.')&&!/^\d+(\.\d+){3}$/.test(u.hostname)&&!/(\.local|\.internal|\.localhost|\.lan|\.home|\.test|\.invalid)$/.test(u.hostname)&&!/\.(nes|nez|sfc|smc|fig|md|gen|sms|gba|gb|gbc|iso|chd|cue|bin|zip|7z|sav|srm)$/i.test(u.pathname);}catch{return false;}}
+function render(){
+ games.replaceChildren();const query=normalize(search.value);const shown=catalog.filter(g=>(!platform.value||g.platform===platform.value)&&normalize([g.label,g.description,...(Array.isArray(g.tags)?g.tags:[])].join(' ')).includes(query));
+ status.textContent=shown.length?`${shown.length} jogo(s) encontrado(s)`:catalog.length?'Nenhum jogo corresponde aos filtros.':'O catálogo ainda não tem jogos publicados.';
+ for(const game of shown){const card=node('article'),cover=node('div','Capa não disponível','cover');if(/^assets\/[a-zA-Z0-9][a-zA-Z0-9_-]*\.(png|jpg|jpeg|webp)$/.test(game.image||'')){const img=node('img');img.src=game.image;img.alt=`Capa de ${game.label}`;img.loading='lazy';img.addEventListener('error',()=>cover.replaceChildren(node('span','Capa não disponível')));cover.replaceChildren(img);}const body=node('div',undefined,'body');body.append(node('span',[game.platform,game.year].filter(Boolean).join(' · '),'meta'),node('h2',game.label),node('p',game.description||'Descrição em breve.'),node('p',`Licença: ${game.license}`));if(legalLink(game.publicDownload)){const link=node('a','Visitar página de download ↗');link.href=game.publicDownload;link.target='_blank';link.rel='noopener noreferrer';body.append(link);}card.append(cover,body);games.append(card);}
+}
+search.addEventListener('input',render);platform.addEventListener('change',render);
+fetch('catalog.public.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error('catalog');return response.json();}).then(data=>{if(data.version!==1||!Array.isArray(data.items))throw Error('format');catalog=data.items.filter(g=>g&&typeof g.label==='string'&&typeof g.license==='string'&&g.license&&['homebrew','demo','public-domain'].includes(g.category));for(const name of [...new Set(catalog.map(g=>g.platform).filter(Boolean))].sort()){const option=node('option',name);option.value=name;platform.append(option);}render();}).catch(()=>{status.textContent='Não foi possível carregar o catálogo. Tente novamente mais tarde.';});
+</script></body></html>

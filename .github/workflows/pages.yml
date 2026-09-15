@@ -1,0 +1,28 @@
+name: Publish catalog Pages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: catalog-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit static catalog
+        shell: pwsh
+        run: ./scripts/Test-PublicLayout.ps1
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: catalog-site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

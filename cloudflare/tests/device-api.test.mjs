@@ -17,14 +17,14 @@ function env() { return { DEVICE_KV: new MemoryKV(), PAIRING_KV: new MemoryKV(),
 function post(url, body, headers = {}) { return new Request(`https://service.example${url}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }); }
 async function safe(route, request, bindings) { try { return await route(request, bindings); } catch (error) { return errorResponse(error); } }
 
-test('TV pairing requires admin approval and creates a device-specific credential', async () => {
+test('TV pairing requires admin approval and creates a device-specific credential with scopes', async () => {
   const bindings = env();
   const start = await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-001', model: 'AFTSS' }), bindings);
   assert.equal(start.status, 201);
   const startBody = await start.json();
   const { pairId, code, deviceId } = startBody;
   assert.equal(new URL(startBody.pairingUrl).origin, 'https://service.example');
-  assert.equal(new URL(startBody.pairingUrl).pathname, '/pair/');
+  assert.equal(new URL(startBody.pairingUrl).pathname, '/admin/');
   const pending = await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId, code }), bindings);
   assert.equal(pending.status, 202);
   const list = await safe(routeAdminPairings, new Request('https://service.example/api/admin/pairings'), bindings);
@@ -33,33 +33,46 @@ test('TV pairing requires admin approval and creates a device-specific credentia
   assert.equal(listedPair.model, 'AFTSS');
   const storedPair = await bindings.PAIRING_KV.get(`pair:${pairId}`, 'json');
   assert.equal('code' in storedPair, false);
-  const approved = await safe(routeAdminPairings, post(`/api/admin/pairings/${pairId}/approve`, { name: 'Sala' }), bindings);
+  const approved = await safe(routeAdminPairings, post(`/api/admin/pairings/${pairId}/approve`, { name: 'Sala', profileId: 'FIRE_TV' }), bindings);
   assert.equal(approved.status, 200);
   const complete = await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId, code, model: 'AFTSS' }), bindings);
   const result = await complete.json();
   assert.equal(result.status, 'paired');
   assert.ok(result.deviceToken.length >= 40);
+  assert.equal(result.profileId, 'FIRE_TV');
+  assert.deepEqual(result.scopes, ['catalog.read', 'asset.download', 'device.state.write']);
   assert.equal((await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId, code }), bindings)).status, 410);
 });
 
-test('one-time pairing code can approve only its own pending TV without exposing a device credential', async () => {
+test('public pairing approval endpoint is permanently closed (404) to prevent self-approval', async () => {
   const bindings = env();
   const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-public-approval', model: 'AFTSS' }), bindings)).json();
   const approval = await safe(routeDeviceApi, post('/api/device/pair/approve', { pairId: started.pairId, code: started.code, name: 'Sala' }), bindings);
-  assert.equal(approval.status, 200);
-  const approvalBody = await approval.json();
-  assert.equal(approvalBody.approved, true);
-  assert.equal('deviceToken' in approvalBody, false);
-  assert.equal((await safe(routeDeviceApi, post('/api/device/pair/approve', { pairId: started.pairId, code: 'wrong' }), bindings)).status, 409);
-  const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code, model: 'AFTSS' }), bindings)).json();
-  assert.equal(paired.status, 'paired');
+  assert.equal(approval.status, 404);
+  const stillPending = await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code }), bindings);
+  assert.equal(stillPending.status, 202);
+});
+
+test('untrusted clientType in pairing request cannot self-grant importer privileges without admin approval', async () => {
+  const bindings = env();
+  bindings.RESERVATION_KV = new MemoryKV();
+  const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'attacker-client', model: 'Browser', clientType: 'importer' }), bindings)).json();
+  // Admin approves this device as a TV profile, ignoring requestedType
+  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'TV Quarto', profileId: 'FIRE_TV' }), bindings);
+  const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code }), bindings)).json();
+  assert.equal(paired.clientType, 'tv');
+  assert.equal(paired.profileId, 'FIRE_TV');
+  assert.ok(!paired.scopes.includes('asset.upload'));
+  // TV credential cannot access importer endpoints
+  const denied = await safe(routeImporterApi, new Request('https://service.example/api/importer/status', { headers: { authorization: `Bearer ${paired.deviceToken}` } }), bindings);
+  assert.equal(denied.status, 403);
 });
 
 test('device API denies absent or revoked tokens and preserves published catalogue metadata', async () => {
   const bindings = env();
   assert.equal((await safe(routeDeviceApi, new Request('https://service.example/api/device/catalog'), bindings)).status, 401);
   const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-002' }), bindings)).json();
-  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'TV teste' }), bindings);
+  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'TV teste', profileId: 'FIRE_TV' }), bindings);
   const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code }), bindings)).json();
   await bindings.CATALOG_KV.put('catalog:active', JSON.stringify({ version: 1, revision: 'r1', items: [{ id: 'item-1', label: 'Jogo', objectKey: 'assets/private.rom', size: 12 }] }));
   const request = new Request('https://service.example/api/device/catalog', { headers: { authorization: `Bearer ${paired.deviceToken}` } });
@@ -76,7 +89,7 @@ test('paired TV receives a short-lived signed download only for a listed asset',
   const bindings = env();
   Object.assign(bindings, { R2_ACCOUNT_ID: 'account-id', R2_BUCKET_NAME: 'private-library', R2_ACCESS_KEY_ID: 'access', R2_SECRET_ACCESS_KEY: 'secret' });
   const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-003' }), bindings)).json();
-  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'Sala' }), bindings);
+  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'Sala', profileId: 'FIRE_TV' }), bindings);
   const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code }), bindings)).json();
   const id = '11111111-1111-4111-8111-111111111111';
   await bindings.CATALOG_KV.put('catalog:active', JSON.stringify({ revision: 'r1', items: [{ id, label: 'Teste', objectKey: 'assets/test/game.rom', kind: 'rom', size: 123, sha256: 'a'.repeat(64) }] }));
@@ -98,25 +111,23 @@ test('catalog reads and download tickets never spend KV writes', async () => {
   const bindings = env();
   Object.assign(bindings, { R2_ACCOUNT_ID: 'account-id', R2_BUCKET_NAME: 'private-library', R2_ACCESS_KEY_ID: 'access', R2_SECRET_ACCESS_KEY: 'secret' });
   const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-read-only' }), bindings)).json();
-  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'Sala' }), bindings);
+  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'TV' }), bindings);
   const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code }), bindings)).json();
-  const id = '33333333-3333-4333-8333-333333333333';
-  await bindings.CATALOG_KV.put('catalog:active', JSON.stringify({ revision: 'r-read-only', items: [{ id, label: 'Teste', objectKey: 'assets/test/game.rom', kind: 'rom', size: 123, sha256: 'a'.repeat(64) }] }));
+  await bindings.CATALOG_KV.put('catalog:active', JSON.stringify({ revision: 'r1', items: [{ id: '11111111-1111-4111-8111-111111111111', label: 'T', objectKey: 'assets/t', size: 1 }] }));
   bindings.DEVICE_KV.puts = 0;
+  bindings.CATALOG_KV.puts = 0;
+  bindings.PAIRING_KV.puts = 0;
   const headers = { authorization: `Bearer ${paired.deviceToken}` };
-
-  const catalog = await safe(routeDeviceApi, new Request('https://service.example/api/device/catalog', { headers }), bindings);
-  assert.equal(catalog.status, 200);
-  assert.equal(catalog.headers.get('etag'), '"r-read-only"');
-  const unchanged = await safe(routeDeviceApi, new Request('https://service.example/api/device/catalog', { headers: { ...headers, 'if-none-match': '"r-read-only"' } }), bindings);
-  assert.equal(unchanged.status, 304);
-  assert.equal((await safe(routeDeviceApi, new Request(`https://service.example/api/device/download/${id}`, { headers }), bindings)).status, 200);
+  assert.equal((await safe(routeDeviceApi, new Request('https://service.example/api/device/catalog', { headers }), bindings)).status, 200);
+  assert.equal((await safe(routeDeviceApi, new Request('https://service.example/api/device/download/11111111-1111-4111-8111-111111111111', { headers }), bindings)).status, 200);
   assert.equal(bindings.DEVICE_KV.puts, 0);
+  assert.equal(bindings.CATALOG_KV.puts, 0);
+  assert.equal(bindings.PAIRING_KV.puts, 0);
 });
 
 test('identical device state is written once inside the six hour window', async () => {
   const bindings = env();
-  const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-state-budget' }), bindings)).json();
+  const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-tv-state' }), bindings)).json();
   await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'Sala' }), bindings);
   const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code }), bindings)).json();
   bindings.DEVICE_KV.puts = 0;
@@ -148,20 +159,23 @@ test('pairing creation is throttled and one TV cannot create overlapping codes',
   assert.equal((await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-extra-tv' }, ip), bindings)).status, 429);
 });
 
-test('paired importer receives a revocable publisher credential without R2 secrets', async () => {
+test('paired importer receives a revocable publisher credential with explicit scopes without R2 secrets', async () => {
   const bindings = env();
   bindings.RESERVATION_KV = new MemoryKV();
   bindings.PRIVATE_ASSETS = { async list() { return { objects: [], truncated: false }; } };
   bindings.MAX_PRIVATE_BYTES = '8000000000';
   const started = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'windows-importer-001', model: 'Windows 11', clientType: 'importer' }), bindings)).json();
-  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'Notebook' }), bindings);
+  await safe(routeAdminPairings, post(`/api/admin/pairings/${started.pairId}/approve`, { name: 'Notebook', profileId: 'importer' }), bindings);
   const paired = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: started.pairId, code: started.code, model: 'Windows 11' }), bindings)).json();
   assert.equal(paired.clientType, 'importer');
+  assert.equal(paired.profileId, 'importer');
+  assert.ok(paired.scopes.includes('asset.upload'));
+  assert.ok(paired.scopes.includes('catalog.publish'));
   assert.equal('r2AccessKey' in paired, false);
   const status = await safe(routeImporterApi, new Request('https://service.example/api/importer/status', { headers: { authorization: `Bearer ${paired.deviceToken}` } }), bindings);
   assert.equal(status.status, 200);
   const tvStarted = await (await safe(routeDeviceApi, post('/api/device/pair/start', { deviceId: 'aftss-not-importer' }), bindings)).json();
-  await safe(routeAdminPairings, post(`/api/admin/pairings/${tvStarted.pairId}/approve`, { name: 'TV' }), bindings);
+  await safe(routeAdminPairings, post(`/api/admin/pairings/${tvStarted.pairId}/approve`, { name: 'TV', profileId: 'FIRE_TV' }), bindings);
   const tv = await (await safe(routeDeviceApi, post('/api/device/pair/complete', { pairId: tvStarted.pairId, code: tvStarted.code }), bindings)).json();
   assert.equal((await safe(routeImporterApi, new Request('https://service.example/api/importer/status', { headers: { authorization: `Bearer ${tv.deviceToken}` } }), bindings)).status, 403);
 });

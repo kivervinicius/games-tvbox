@@ -41,6 +41,8 @@ public final class CloudDeviceClient {
     public JSONObject startPairing() throws Exception {
         JSONObject body = new JSONObject();
         body.put("deviceId", deviceId);
+        body.put("platform", "android");
+        body.put("requestedType", "tv");
         body.put("model", Build.MANUFACTURER + " " + Build.MODEL);
         return request("POST", "/api/device/pair/start", null, body);
     }
@@ -63,7 +65,7 @@ public final class CloudDeviceClient {
     }
 
     public JSONObject downloadTicket(String deviceToken, String itemId) throws Exception {
-        if (itemId == null || !itemId.matches("[A-Fa-f0-9-]{36}")) throw new IllegalArgumentException("Invalid catalog item ID");
+        if (itemId == null || !itemId.matches("[A-Za-z0-9_.:-]{8,100}")) throw new IllegalArgumentException("Invalid catalog item ID");
         JSONObject ticket = request("GET", "/api/device/download/" + itemId, deviceToken, null);
         URL signed = new URL(ticket.optString("url", ""));
         if (!"https".equalsIgnoreCase(signed.getProtocol()) || !signed.getHost().toLowerCase().endsWith(".r2.cloudflarestorage.com")) throw new SecurityException("Cloud download URL is not a private R2 endpoint");

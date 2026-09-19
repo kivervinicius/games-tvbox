@@ -55,20 +55,21 @@ test('worker exposes health and protects administrative routes', async () => {
   assert.equal((await admin.json()).error.code, 'admin_auth_required');
 });
 
-test('one-time TV approval page is public and does not depend on the administrative Access session', async () => {
+test('public pairing links redirect to protected admin panel for authorized approval', async () => {
   const env = { ASSETS: { fetch: async () => new Response('missing', { status: 404 }) } };
   const page = await worker.fetch(new Request('https://service.example/pair/?pair=11111111-1111-4111-8111-111111111111'), env, {});
-  assert.equal(page.status, 200);
-  assert.match(page.headers.get('content-type'), /text\/html/);
-  assert.match(await page.text(), /Aprovar esta TV/);
+  assert.equal(page.status, 302);
+  assert.equal(new URL(page.headers.get('location')).pathname, '/admin/');
+  assert.equal(new URL(page.headers.get('location')).searchParams.get('pair'), '11111111-1111-4111-8111-111111111111');
 });
 
-test('legacy administrator pairing links move directly to the one-time approval page', async () => {
+test('administrator pairing approval is protected by admin access authentication', async () => {
   const env = { ASSETS: { fetch: async () => new Response('missing', { status: 404 }) } };
-  const legacy = await worker.fetch(new Request('https://service.example/admin/?pair=11111111-1111-4111-8111-111111111111'), env, {});
-  assert.equal(legacy.status, 302);
-  assert.equal(new URL(legacy.headers.get('location')).pathname, '/pair/');
+  const adminPair = await worker.fetch(new Request('https://service.example/api/admin/pairings/11111111-1111-4111-8111-111111111111/approve', { method: 'POST', body: '{}' }), env, {});
+  assert.equal(adminPair.status, 401);
+  assert.equal((await adminPair.json()).error.code, 'admin_auth_required');
 });
+
 
 test('request parser rejects malformed and oversized JSON before any write', async () => {
   const { jwt, jwks } = await signedAccessJwt();

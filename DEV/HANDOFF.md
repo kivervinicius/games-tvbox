@@ -2,16 +2,17 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Android Core Abstractions implemented and verified
+- Entry: Importer PlatformRegistry, Gradle build flavors, and AndroidManifest relaxed
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: launcher-android/app/src/main/java/com/kiver/fireretro/ (Storage, Input, DeviceProfile, RetroArchProvider, GamerDashboard), tests, scripts
-- Verified: All 21 Java unit tests in project.tests.ps1 passed; 42 Cloudflare tests passed
-- Next context: MainActivity modular decomposition and Gradle multi-variant build migration (`tv` and `gamer`)
+- Changed: AndroidManifest.xml, settings.gradle, build.gradle, app/build.gradle, MainActivity.java, JogosRetroImporter.Core, JogosRetroImporter Form1, tests
+- Verified: Android 21/21 tests passed; Importer tests passed; PowerShell tests passed; Cloudflare 42/42 passed
+- Next context: Cloudflare Control Plane enhancement (Device groups, Release channels) and Final Acceptance verification
 
 ## Latest Work
-Implementada a camada de abstração de armazenamento Android (`RomStorageStrategy`, `StorageType`, `BaseRomStorageStrategy`, `AppStorageStrategy`, `LegacyExternalStorageStrategy`, `RemovableStorageStrategy`, `UsbStorageStrategy`, `RomStorageResolver` com preservação retrocompatível em `StoragePaths`). Implementada a abstração de input desacoplada de KeyCodes físicos (`GameAction`, `InputDeviceType`, `InputManager` com suporte a layouts Nintendo/Xbox e gestos touch). Implementado o motor de perfis de dispositivo (`DeviceProfile`, `DeviceType`). Implementado o provedor de emuladores (`EmulatorProvider`, `RetroArchProvider` para 32 e 64 bits). Implementado o estado do Gamer Dashboard (`GamerDashboardState`). Todas as 4 novas suítes de testes unitários integradas e validadas.
+Relaxada a exigência exclusiva de leanback e adicionado suporte a touchscreen no manifesto do Android. Configurado o build padrão via Gradle com flavors `tv` e `gamer`. Integrados `DeviceProfile`, `InputManager` e `RetroArchProvider` ao ciclo de vida e lançamento do `MainActivity`, além do suporte a identificadores canônicos de conteúdo `sha256:`. Alinhado o Importer Windows ao registro canônico de plataformas (`PlatformRegistry.cs`), eliminando a exibição enganosa de suporte a plataformas com pipeline ainda não implementado no desktop.
 
 ## Recent Entries
+- 2026-09-19: Importer PlatformRegistry, Gradle build flavors, and AndroidManifest relaxed.
 - 2026-09-19: Android Core Abstractions implemented and verified.
 - 2026-09-19: Platform Registry and Compatibility Engine implemented and verified.
 - 2026-09-19: P0.2 and P0.3 content identity, idempotent publication, and transactional coordinator.

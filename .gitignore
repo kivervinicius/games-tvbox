@@ -1,5 +1,7 @@
 # Builds and local tooling
 build/
+.gradle/
+launcher-android/.gradle/
 launcher-android/build/
 launcher-android/tests/.build/
 android-sdk/

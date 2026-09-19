@@ -21,6 +21,12 @@ try
     Assert(PlatformDetector.Detect("game.cue") == GamePlatform.PlayStation, "PlayStation detection failed");
     Assert(PlatformDetector.Detect("game.gba") == GamePlatform.GameBoyAdvance, "GBA detection failed");
 
+    Assert(PlatformRegistry.IsPipelineSupported("ps1"), "PS1 pipeline must be supported");
+    Assert(!PlatformRegistry.IsPipelineSupported("snes"), "SNES pipeline is currently planned, not supported");
+    Assert(PlatformRegistry.FindByExtension("game.cue")?.Id == "ps1", "CUE resolves to ps1");
+    Assert(PlatformRegistry.FindByExtension("mario.smc")?.Id == "snes", "SMC resolves to snes");
+    Assert(PlatformRegistry.FindById("playstation")?.Id == "ps1", "FindById supports display name or id");
+
     var originalHash = await FileHash.Sha256Async(cue);
     var copy = Path.Combine(root, "copy.cue"); File.Copy(cue, copy);
     Assert(originalHash == await FileHash.Sha256Async(copy), "SHA-256 is not stable");

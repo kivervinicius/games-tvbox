@@ -146,9 +146,17 @@ public class MainActivity extends Activity {
     private TextView shellStatusView;
     private View lastContentFocus;
     private int sidebarFirstId;
+    private DeviceProfile currentDeviceProfile;
+    private final InputManager inputManager = new InputManager();
+    private final GamerDashboardState gamerDashboardState = new GamerDashboardState();
+    private RetroArchProvider emulatorProvider;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        boolean isTv = getPackageManager() != null && getPackageManager().hasSystemFeature("android.software.leanback");
+        boolean hasTouch = getPackageManager() != null && getPackageManager().hasSystemFeature("android.hardware.touchscreen");
+        currentDeviceProfile = DeviceProfile.inferProfile(Build.MANUFACTURER, Build.MODEL, Build.VERSION.SDK_INT, Build.CPU_ABI, isTv, false, hasTouch);
+        emulatorProvider = RetroArchProvider.forAbi(currentDeviceProfile.getAbi());
         getWindow().setFlags(1024, 1024);
         buildScreen();
     }
@@ -1596,10 +1604,12 @@ public class MainActivity extends Activity {
     }
     private void launch(Game game) {
         if (game.remoteAvailable || !new File(game.path).isFile()) {
-            if (game.cloudId.matches("[A-Fa-f0-9-]{36}")) { installRemoteGame(game); return; }
+            if (game.cloudId != null && (game.cloudId.matches("[A-Fa-f0-9-]{36}") || game.cloudId.startsWith("sha256:") || game.cloudId.matches("^[a-zA-Z0-9:_-]{8,80}$"))) { installRemoteGame(game); return; }
             Toast.makeText(this, "O arquivo deste jogo não foi encontrado.", Toast.LENGTH_LONG).show(); return;
         }
-        Intent intent = new Intent(); intent.setComponent(new ComponentName(RETROARCH, "com.retroarch.browser.retroactivity.RetroActivityFuture")); intent.putExtra("ROM", game.path); intent.putExtra("LIBRETRO", game.core); intent.putExtra("CONFIGFILE", RETROARCH_CONFIG); startActivity(intent);
+        String targetPkg = emulatorProvider != null ? emulatorProvider.getPackageName() : RETROARCH;
+        String targetCfg = emulatorProvider != null ? emulatorProvider.getDefaultConfigPath() : RETROARCH_CONFIG;
+        Intent intent = new Intent(); intent.setComponent(new ComponentName(targetPkg, "com.retroarch.browser.retroactivity.RetroActivityFuture")); intent.putExtra("ROM", game.path); intent.putExtra("LIBRETRO", game.core); intent.putExtra("CONFIGFILE", targetCfg); startActivity(intent);
     }
     private void installRemoteGame(final Game game) {
         String size = game.size > 0 ? String.format(java.util.Locale.getDefault(), "%.1f MB", game.size / 1048576d) : "tamanho não informado";

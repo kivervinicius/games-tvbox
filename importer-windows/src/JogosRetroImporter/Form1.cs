@@ -31,7 +31,13 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent(); BuildUi();
-        platform.Items.AddRange(["PlayStation", "NES", "SNES", "Mega Drive", "Game Boy Advance"]); platform.SelectedIndex = 0;
+        platform.Items.Clear();
+        foreach (var p in PlatformRegistry.Platforms)
+        {
+            var label = p.Status == PipelineStatus.Supported ? p.DisplayName : $"{p.DisplayName} (Em breve)";
+            platform.Items.Add(label);
+        }
+        platform.SelectedIndex = 0;
         pair.Click += async (_, _) => await StartPairingAsync(); completePair.Click += async (_, _) => await CompletePairingAsync();
         choose.Click += (_, _) => ChooseFile(); prepare.Click += async (_, _) => await PrepareAsync(); publish.Click += async (_, _) => await PublishAsync(); repair.Click += async (_, _) => await RepairAsync();
         completePair.Enabled = false; publish.Enabled = false;
@@ -77,6 +83,18 @@ public partial class Form1 : Form
     {
         using var dialog = new OpenFileDialog { Filter = "Jogos suportados|*.7z;*.zip;*.cue;*.iso;*.chd|Todos os arquivos|*.*", Title = "Escolha o jogo do seu acervo" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return; source.Text = dialog.FileName; title.Text = GameTitleParser.Parse(dialog.FileName).Title; prepared = null; publish.Enabled = false; status.Text = "Arquivo selecionado. Clique em Analisar e converter.";
+        var detected = PlatformRegistry.FindByExtension(dialog.FileName);
+        if (detected != null)
+        {
+            for (int i = 0; i < PlatformRegistry.Platforms.Count; i++)
+            {
+                if (PlatformRegistry.Platforms[i].Id == detected.Id)
+                {
+                    platform.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
     }
 
     private async Task RepairAsync()
@@ -87,6 +105,16 @@ public partial class Form1 : Form
     private async Task PrepareAsync()
     {
         if (!File.Exists(source.Text)) { MessageBox.Show(this, "Escolha um arquivo primeiro.", "Jogos Retro", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+        var selectedIdx = platform.SelectedIndex;
+        if (selectedIdx >= 0 && selectedIdx < PlatformRegistry.Platforms.Count)
+        {
+            var def = PlatformRegistry.Platforms[selectedIdx];
+            if (def.Status != PipelineStatus.Supported)
+            {
+                MessageBox.Show(this, $"O pipeline de importação automatizada para '{def.DisplayName}' está planejado para a próxima versão de emuladores. No momento, o pipeline suporta PlayStation.", "Plataforma planejada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+        }
         await RunAsync(async () => {
             if (!await tools.IsHealthyAsync(LockPath)) throw new InvalidOperationException("As ferramentas precisam ser reparadas antes da conversão.");
             prepared = await new ImportPipeline(tools.ChdmanPath).PreparePlayStationAsync(source.Text, new Progress<string>(message => status.Text = message));

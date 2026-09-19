@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.kiver.fireretro'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.kiver.fireretro"
+        minSdk 28
+        targetSdk 34
+        versionCode 20260936
+        versionName "0.6.2"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    flavorDimensions = ["mode"]
+    productFlavors {
+        tv {
+            dimension "mode"
+            applicationIdSuffix ".tv"
+            versionNameSuffix "-tv"
+            buildConfigField "String", "DEVICE_MODE", "\"TV\""
+            buildConfigField "boolean", "GAMER_MODE", "false"
+        }
+        gamer {
+            dimension "mode"
+            applicationIdSuffix ".gamer"
+            versionNameSuffix "-gamer"
+            buildConfigField "String", "DEVICE_MODE", "\"GAMER\""
+            buildConfigField "boolean", "GAMER_MODE", "true"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+}
+
+tasks.register('runJavaTests', Exec) {
+    description = 'Executes pure Java behavioral tests across core models, storage, input, profiles and emulators.'
+    workingDir = rootDir
+    commandLine 'pwsh', '-File', 'tests/project.tests.ps1'
+}

@@ -1,5 +1,11 @@
 # Worklog — Games TV Box Gaming Platform
 
+## 2026-09-19 - Align Importer Platform Registry, Build Variants & MainActivity Integration
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Updated `AndroidManifest.xml` to make `leanback` and `touchscreen` optional (unblocking phone, tablet, and gamer handheld installation). Created Gradle build system (`settings.gradle`, `build.gradle`, `app/build.gradle`) defining `tv` and `gamer` product flavors with BuildConfig fields. Integrated `DeviceProfile`, `InputManager`, and `RetroArchProvider` (32/64-bit ABI resolution) in `MainActivity.java` and supported canonical `sha256:` contentId downloads. Connected Importer Windows (`PlatformRegistry.cs`, `Form1.cs`, and `JogosRetroImporter.Tests`) to canonical platform registry, enforcing truthful pipeline readiness.
+- Verified: All 21 Java tests passed (`project.tests.ps1`), all .NET Importer tests passed (`JogosRetroImporter.Tests`), PowerShell Manager tests passed (`Test-Manager.ps1`), and all 42 Cloudflare Worker tests passed.
+- Next context: Cloudflare Control Plane enhancement (Device groups, Release channels) and Final Acceptance verification.
+
 ## 2026-09-19 - Implement Android Core Abstractions (Storage, Input, Device Profiles, Emulator Provider, Gamer Dashboard)
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Implemented `RomStorageStrategy` tier (`StorageType`, `BaseRomStorageStrategy`, `AppStorageStrategy`, `LegacyExternalStorageStrategy`, `RemovableStorageStrategy`, `UsbStorageStrategy`, `RomStorageResolver`, backwards-compatible `StoragePaths`). Implemented decoupled Input subsystem (`GameAction`, `InputDeviceType`, `InputManager` with repeat throttling and gesture recognition). Implemented `DeviceProfile` & `DeviceType` inference engine. Implemented `EmulatorProvider` & `RetroArchProvider` for 32/64-bit ABI package and core resolution. Implemented `GamerDashboardState` with battery, storage, and touch fallback evaluation. Created 4 comprehensive test suites in `launcher-android/tests/`.

@@ -156,7 +156,7 @@ if ($manifestText -notmatch 'android:banner="@drawable/jogos_retro_banner"') { t
 if ($manifestText -notmatch 'android:icon="@drawable/fireretro_home_icon_v2"') { throw 'The Fire TV home icon must use the dedicated square artwork' }
 if ($manifestText -notmatch 'android:versionCode="20260936"') { throw 'The Fire TV package must bump versionCode for on-demand cloud downloads' }
 if ($manifestText -notmatch 'android.permission.REQUEST_INSTALL_PACKAGES') { throw 'APK installation permission is missing' }
-if ($manifestText -notmatch 'android:name="android.software.leanback" android:required="true"') { throw 'The Fire TV app must request the Leanback launcher tile' }
+if ($manifestText -notmatch 'android:name="android.software.leanback"') { throw 'The Fire TV app must declare the Leanback launcher tile' }
 if ($manifestText -notmatch '<activity[^>]*android:banner="@drawable/jogos_retro_banner"') { throw 'The Leanback activity must expose the widescreen artwork' }
 if ($manifestText -notmatch '<activity[^>]*android:icon="@drawable/fireretro_home_icon_v2"') { throw 'The Leanback activity must expose the dedicated home icon' }
 if ($manifestText -notmatch '<activity-alias[^>]*android:name="\.FireTvHome"') { throw 'The Fire TV launcher alias is missing' }

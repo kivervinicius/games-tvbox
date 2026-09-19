@@ -39,7 +39,32 @@ try
     Assert(tools.IsValid(), "valid locked tool was rejected");
     Assert(!(tools with { Sha256 = "bad" }).IsValid(), "invalid tool hash was accepted");
 
-    Console.WriteLine("PASS: importer core preserves originals and validates PlayStation input");
+    // Test cross-platform abstractions
+    var platform = PlatformServices.Instance;
+    Assert(!string.IsNullOrEmpty(platform.OperatingSystemName), "OS name must not be empty");
+    Assert(!string.IsNullOrEmpty(platform.RuntimeIdentifier), "RID must not be empty");
+
+    var paths = new AppPaths(customRoot: root);
+    Assert(paths.CacheDirectory == root, "Custom root not respected");
+    Assert(paths.StagingDirectory == Path.Combine(root, "staging"), "Staging path wrong");
+
+    var credStore = new CrossPlatformCredentialStore(root);
+    credStore.Save("test_key", "secret_value_12345");
+    var loaded = credStore.Load("test_key");
+    Assert(loaded == "secret_value_12345", "Credential store roundtrip failed");
+    credStore.Clear("test_key");
+    Assert(string.IsNullOrEmpty(credStore.Load("test_key")), "Credential clear failed");
+
+    var secureTokenStore = new SecureTokenStore(credStore);
+    secureTokenStore.Save("tok_xyz987");
+    Assert(secureTokenStore.Load() == "tok_xyz987", "SecureTokenStore delegation failed");
+    secureTokenStore.Clear();
+    Assert(string.IsNullOrEmpty(secureTokenStore.Load()), "SecureTokenStore clear failed");
+
+    var resolver = new ToolchainResolver(platform);
+    Assert(platform.IsWindows ? resolver.ChdmanExecutableName == "chdman.exe" : resolver.ChdmanExecutableName == "chdman", "Executable name wrong for platform");
+
+    Console.WriteLine("PASS: importer core preserves originals, validates PlayStation input, and runs cross-platform abstractions");
 }
 finally { try { Directory.Delete(root, true); } catch { } }
 

@@ -1,26 +1,22 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace JogosRetroImporter.Core;
 
 public sealed class SecureTokenStore
 {
-    private readonly string path;
-    public SecureTokenStore(string? path = null) => this.path = path ?? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "JogosRetro", "Importer", "publisher.token");
+    private readonly ICredentialStore credentialStore;
+    private const string TokenKey = "publisher_token";
 
-    public void Save(string token)
+    public SecureTokenStore(string? path = null)
     {
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
-        var protectedBytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(token), Encoding.UTF8.GetBytes("JogosRetroImporter"), DataProtectionScope.CurrentUser);
-        File.WriteAllBytes(path, protectedBytes);
+        var dir = !string.IsNullOrWhiteSpace(path) ? Path.GetDirectoryName(path) : AppPaths.Default.ConfigDirectory;
+        credentialStore = new CrossPlatformCredentialStore(dir);
     }
 
-    public string Load()
+    public SecureTokenStore(ICredentialStore credentialStore)
     {
-        if (!File.Exists(path)) return "";
-        try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(path), Encoding.UTF8.GetBytes("JogosRetroImporter"), DataProtectionScope.CurrentUser)); }
-        catch { return ""; }
+        this.credentialStore = credentialStore ?? throw new ArgumentNullException(nameof(credentialStore));
     }
 
-    public void Clear() { if (File.Exists(path)) File.Delete(path); }
+    public void Save(string token) => credentialStore.Save(TokenKey, token);
+    public string Load() => credentialStore.Load(TokenKey);
+    public void Clear() => credentialStore.Clear(TokenKey);
 }

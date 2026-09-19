@@ -2,10 +2,11 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: Retrostic Baseline Audit, Discovery documentation, API v1 specification, and ADR-R01..ADR-R08
+- Scope: .NET 10 LTS Migration, PlatformServices, AppPaths, CrossPlatformCredentialStore, ToolchainResolver, and Importer Tests on Linux
 
 ## Commands
-- `node --test cloudflare/tests/*.test.mjs`
+- `export PATH="$HOME/.dotnet:$PATH" && dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj`
+- `orquestrador-maestro check-dev-gates --strict`
 - `pwsh -File launcher-android/tests/project.tests.ps1`
 - `dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj`
 - `pwsh -File manager-windows/tests/Test-Manager.ps1`

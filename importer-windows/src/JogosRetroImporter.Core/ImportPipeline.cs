@@ -9,7 +9,7 @@ public sealed class ImportPipeline
     public ImportPipeline(string chdman, string? cacheRoot = null)
     {
         this.chdman = chdman;
-        this.cacheRoot = cacheRoot ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "JogosRetro", "Importer");
+        this.cacheRoot = cacheRoot ?? AppPaths.Default.CacheDirectory;
     }
 
     public async Task<PreparedGame> PreparePlayStationAsync(string inputPath, IProgress<string>? status = null, CancellationToken cancellationToken = default)

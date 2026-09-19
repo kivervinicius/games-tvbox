@@ -2,14 +2,14 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Baseline Audit, Discovery, API v1 spec, and ADRs (ADR-R01..ADR-R08) for Retrostic Integration completed
+- Entry: .NET 10 LTS Migration and Platform-Neutral Abstractions completed and verified
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: docs/retrostic/BASELINE.md, docs/retrostic/RETROSTIC_DISCOVERY.md, docs/retrostic/RETROSTIC_API_V1.md, docs/architecture/adr/ADR-R01..R08
-- Verified: DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
-- Next context: Migrating Importer Core to .NET 10 LTS and implementing cross-platform abstractions
+- Changed: importer-windows/src/JogosRetroImporter.Core/*, importer-windows/src/JogosRetroImporter/*, importer-windows/tests/JogosRetroImporter.Tests/*
+- Verified: Importer Tests executed on Linux on .NET 10 (100% assertions pass), DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
+- Next context: Implementing Game Source Provider contracts and Retrostic adapters (API, HTML, and Browser resolvers)
 
 ## Latest Work
-Produzidos os documentos formais de baseline do importador (`BASELINE.md`), análise de tráfego/CDN/Cloudflare e estratégia de aquisição do Retrostic (`RETROSTIC_DISCOVERY.md`), especificação REST da API oficial (`RETROSTIC_API_V1.md`) e os 8 ADRs (`ADR-R01` a `ADR-R08`) definindo a arquitetura de provider desacoplado, resolução multinível, download manager resiliente, migração .NET 10 cross-platform, identidades criptográficas canônicas, ingestão multi-plataforma e publicação atômica.
+Migrada a solução `JogosRetroImporter` para .NET 10 LTS (`net10.0`). Criadas as abstrações de plataforma `IPlatformServices`, `IAppPaths` (compatível com Linux XDG e Windows LocalAppData), `ICredentialStore` (AES-256-GCM autenticado no Linux e DPAPI no Windows) e `IToolchainResolver` (resolução dinâmica de executáveis `chdman`/`chdman.exe` e permissões de execução). Desacoplados `SecureTokenStore`, `ToolchainManager` e `ImportPipeline`. Testes executados e validados no Linux com 100% de sucesso.
 
 ## Recent Entries
 - 2026-09-19: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified.

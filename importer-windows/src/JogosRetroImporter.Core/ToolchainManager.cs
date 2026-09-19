@@ -4,9 +4,15 @@ namespace JogosRetroImporter.Core;
 
 public sealed class ToolchainManager
 {
+    private readonly IToolchainResolver toolchainResolver;
     public string CacheDirectory { get; }
-    public string ChdmanPath => Path.Combine(CacheDirectory, "chdman.exe");
-    public ToolchainManager(string? cacheDirectory = null) => CacheDirectory = cacheDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "JogosRetro", "Importer", "tools");
+    public string ChdmanPath => Path.Combine(CacheDirectory, toolchainResolver.ChdmanExecutableName);
+
+    public ToolchainManager(string? cacheDirectory = null, IToolchainResolver? toolchainResolver = null)
+    {
+        this.toolchainResolver = toolchainResolver ?? new ToolchainResolver();
+        CacheDirectory = cacheDirectory ?? AppPaths.Default.ToolsDirectory;
+    }
 
     public async Task<bool> IsHealthyAsync(string lockPath, CancellationToken cancellationToken = default)
     {
@@ -17,9 +23,12 @@ public sealed class ToolchainManager
 
     public async Task RepairAsync(string bundledTool, string lockPath, CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(bundledTool)) throw new FileNotFoundException("A distribuição não contém chdman.exe. Baixe novamente o instalador ou o pacote portátil.", bundledTool);
+        var exeName = toolchainResolver.ChdmanExecutableName;
+        if (!File.Exists(bundledTool)) throw new FileNotFoundException($"A distribuição não contém {exeName}. Baixe novamente o instalador ou o pacote portátil.", bundledTool);
         var manifest = JsonSerializer.Deserialize<ToolchainManifest>(await File.ReadAllTextAsync(lockPath, cancellationToken), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new InvalidDataException("toolchain.lock.json inválido.");
         if (!manifest.IsValid() || !string.Equals(manifest.Sha256, await FileHash.Sha256Async(bundledTool, cancellationToken), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("A ferramenta incluída não corresponde ao SHA-256 fixado.");
-        Directory.CreateDirectory(CacheDirectory); File.Copy(bundledTool, ChdmanPath, true);
+        Directory.CreateDirectory(CacheDirectory);
+        File.Copy(bundledTool, ChdmanPath, true);
+        toolchainResolver.EnsureExecutable(ChdmanPath);
     }
 }

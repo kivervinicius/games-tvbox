@@ -1,6 +1,10 @@
 # Worklog — Games TV Box Gaming Platform
 
-## 2026-09-19 - Baseline Audit and Architectural ADRs for Retrostic Integration
+## 2026-09-19 - Migrate Importer Solution to .NET 10 LTS and Platform-Neutral Abstractions
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Migrated `JogosRetroImporter.Core` and `JogosRetroImporter.Tests` to `net10.0` (and WinForms app to `net10.0-windows`). Implemented cross-platform abstractions: `IPlatformServices` & `PlatformServices` (OS and arch detection), `IAppPaths` & `AppPaths` (Linux XDG and Windows LocalAppData), `ICredentialStore` & `CrossPlatformCredentialStore` (AES-256-GCM authenticated encryption on Linux and DPAPI on Windows), `IToolchainResolver` & `ToolchainResolver` (executable naming and PATH resolution for chdman). Decoupled `SecureTokenStore`, `ToolchainManager`, and `ImportPipeline`. Added comprehensive tests.
+- Verified: `dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj` executed on Linux with 100% assertions passing. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).
+- Next context: Implementing Game Source Provider contracts and Retrostic adapters (API, HTML, and Browser resolvers).
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Produced `docs/retrostic/BASELINE.md` (audit of current importer locks and dependencies), `docs/retrostic/RETROSTIC_DISCOVERY.md` (reverse-engineering, URL patterns, edge behavior, resolution tiers), `docs/retrostic/RETROSTIC_API_V1.md` (official REST specification for Retrostic provider), and 8 formal ADRs (`ADR-R01` through `ADR-R08`).
 - Verified: DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).

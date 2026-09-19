@@ -2,14 +2,14 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Game Source Provider Contracts and Retrostic Adapters completed and verified
+- Entry: Persistent Resumable Download Manager and Fault Simulation Suite completed and verified
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: importer-windows/src/JogosRetroImporter.Core/GameSourceModels.cs, importer-windows/src/JogosRetroImporter.Core/RetrosticResolvers.cs, importer-windows/tests/fixtures/retrostic/*, importer-windows/tests/JogosRetroImporter.Tests/Program.cs
-- Verified: Importer Tests executed on Linux on .NET 10 (100% assertions pass), DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
-- Next context: Implementing Persistent Resumable Download Manager (`JogosRetro.Downloads`) with HTTP Range probing, retry backoff, and local fault simulation server
+- Changed: importer-windows/src/JogosRetro.Downloads/*, importer-windows/tests/JogosRetroImporter.Tests/HttpFaultServer.cs, importer-windows/tests/JogosRetroImporter.Tests/Program.cs
+- Verified: All 7 fault simulation scenarios executed and passed on Linux, DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
+- Next context: Multi-Platform Intake Pipeline (PS1 CHD conversion, Cartridge passthrough, archive extraction security)
 
 ## Latest Work
-Implementados os contratos de provedor de fonte de jogos (`IGameSourceProvider`) e os adaptadores oficiais do Retrostic (`RetrosticApiResolver` para API REST v1, `RetrosticHtmlResolver` com parsing resiliente de HTML de busca, detalhes e contagem de download, `IRetrosticBrowserBridge` para desafios de borda, e `RetrosticSourceProvider` com estratégia de cascata `API > HTML > BROWSER`). Criadas fixtures determinísticas e testes unitários cobrindo todos os caminhos felizes e fallbacks.
+Implementado o módulo `JogosRetro.Downloads` (`DownloadJob`, `DownloadState`, `DownloadManager`, `JsonDownloadRepository`) com suporte a probe de HTTP Range (`206 Partial Content`), continuação de downloads a partir de arquivos `.part`, renovação automática de tickets expirados (HTTP 403/410) via `IGameSourceProvider`, retry com backoff exponencial e jitter para falhas de rede transitórias, verificação estrita de hash SHA-256 e controle seguro de pausa e retoma. Criado o servidor de simulação de falhas HTTP (`HttpFaultServer`) cobrindo 7 cenários reais de borda.
 
 ## Recent Entries
 - 2026-09-19: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified.

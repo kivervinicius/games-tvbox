@@ -1,6 +1,10 @@
 # Worklog — Games TV Box Gaming Platform
 
-## 2026-09-19 - Implement Game Source Provider Contracts and Retrostic Multi-Tier Adapters
+## 2026-09-19 - Implement Persistent Resumable Download Manager with Fault Simulation
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Created `JogosRetro.Downloads` library (`DownloadJob`, `DownloadState`, `DownloadProgressSnapshot`, `IDownloadRepository`, `JsonDownloadRepository`, `DownloadManager`). Implemented HTTP Range probing (`206 Partial Content`), persistent state saving (`downloads.json`), `.part` stream resumption, automatic 403/410 expired ticket renewal via `IGameSourceProvider`, exponential backoff retry with jitter, SHA-256 integrity verification, and thread-safe pause/resume controls. Built `HttpFaultServer` simulating 200, 206, server ignoring Range, 403 ticket expiry, 500 transient errors, checksum tampering, and pause/resume lifecycle.
+- Verified: All 7 fault simulation scenarios in `JogosRetroImporter.Tests` executed and passed on Linux. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).
+- Next context: Multi-Platform Intake Pipeline (PS1 CHD conversion, Cartridge passthrough, archive extraction security).
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Created `GameSourceModels.cs` defining `IGameSourceProvider`, `GameSearchQuery`, `GameSearchResult`, `GameSourceDetails`, `SourceFile`, and `DownloadDescriptor`. Implemented `RetrosticResolvers.cs` with `RetrosticApiResolver` (for official REST v1), `RetrosticHtmlResolver` (HTML parser with title, region, size, and download countdown extraction), `IRetrosticBrowserBridge`, and `RetrosticSourceProvider` multi-tier coordinator (`API > HTML > BROWSER`). Added comprehensive deterministic test fixtures in `importer-windows/tests/fixtures/retrostic/` and unit test coverage.
 - Verified: `dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj` passed all assertions on Linux with 0 warnings and 0 errors. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).

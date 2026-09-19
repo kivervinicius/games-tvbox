@@ -2,7 +2,7 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: GameSourceModels, RetrosticResolvers (API, HTML, Browser bridge), RetrosticSourceProvider, and Test Fixtures
+- Scope: JogosRetro.Downloads, DownloadManager, JsonDownloadRepository, HttpFaultServer (200, 206 Range, Range ignored, 403 renew, 500 retry, SHA256 mismatch, Pause/Resume)
 
 ## Commands
 - `export PATH="$HOME/.dotnet:$PATH" && dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj`

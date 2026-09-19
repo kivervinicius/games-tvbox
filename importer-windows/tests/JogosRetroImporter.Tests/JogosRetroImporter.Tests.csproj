@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\JogosRetroImporter.Core\JogosRetroImporter.Core.csproj" />
+    <ProjectReference Include="..\..\src\JogosRetro.Downloads\JogosRetro.Downloads.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

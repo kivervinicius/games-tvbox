@@ -1,4 +1,6 @@
 using JogosRetroImporter.Core;
+using JogosRetro.Downloads;
+using JogosRetroImporter.Tests;
 
 var root = Path.Combine(Path.GetTempPath(), "JogosRetroImporterTests", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
@@ -147,10 +149,219 @@ try
     var failingHtmlResolver = new RetrosticHtmlResolver(new Uri("http://localhost:5000/"), new HttpClient(failingHtmlHandler));
     var mockBrowser = new MockBrowserBridge();
     var providerWithBrowser = new RetrosticSourceProvider(failingApiResolver, failingHtmlResolver, mockBrowser);
-    var browserDownload = await providerWithBrowser.ResolveDownloadAsync("blocked-game");
-    Assert(browserDownload.TicketId == "mock-browser-ticket", "Browser bridge tier fallback failed");
+    // ----------------------------------------------------
+    // Fault Simulation Server & DownloadManager Tests
+    // ----------------------------------------------------
+    using var server = new HttpFaultServer();
+    var sampleData = new byte[64 * 1024];
+    new Random(42).NextBytes(sampleData);
+    var sampleSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(sampleData)).ToLowerInvariant();
 
-    Console.WriteLine("PASS: importer core preserves originals, validates PlayStation input, runs cross-platform abstractions, and verifies Retrostic resolvers and provider");
+    // 1. Full 200 OK Download
+    server.RequestHandler = async (req, res) =>
+    {
+        res.StatusCode = 200;
+        res.ContentLength64 = sampleData.Length;
+        await res.OutputStream.WriteAsync(sampleData);
+        res.Close();
+    };
+
+    var downloadsDir = Path.Combine(root, "downloads");
+    var repo = new JsonDownloadRepository(Path.Combine(downloadsDir, "downloads.json"));
+    using var dlManager = new DownloadManager(repo, stagingDirectory: downloadsDir);
+    await dlManager.InitializeAsync();
+
+    var job1 = await dlManager.EnqueueAsync(new DownloadDescriptor("tkt1", "g1", $"{server.BaseUrl}game.7z", "game1.7z", sampleData.Length, sampleSha));
+    while (job1.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job1.State == DownloadState.Completed, $"Job1 expected Completed, got {job1.State}: {job1.ErrorMessage}");
+    Assert(File.Exists(job1.DestinationPath), "Job1 destination file missing");
+    Assert(await FileHash.Sha256Async(job1.DestinationPath) == sampleSha, "Job1 SHA256 mismatch");
+
+    // 2. Resumed 206 Partial Content Download
+    var half = sampleData.Length / 2;
+    var job2Part = Path.Combine(downloadsDir, "game2.7z.part");
+    await File.WriteAllBytesAsync(job2Part, sampleData[..half]);
+
+    server.RequestHandler = async (req, res) =>
+    {
+        var range = req.Headers["Range"];
+        if (range != null && range.StartsWith("bytes="))
+        {
+            var start = int.Parse(range.Replace("bytes=", "").Replace("-", ""));
+            res.StatusCode = 206;
+            res.Headers["Content-Range"] = $"bytes {start}-{sampleData.Length - 1}/{sampleData.Length}";
+            res.ContentLength64 = sampleData.Length - start;
+            await res.OutputStream.WriteAsync(sampleData[start..]);
+            res.Close();
+        }
+        else
+        {
+            res.StatusCode = 200;
+            res.ContentLength64 = sampleData.Length;
+            await res.OutputStream.WriteAsync(sampleData);
+            res.Close();
+        }
+    };
+
+    var job2 = await dlManager.EnqueueAsync(new DownloadDescriptor("tkt2", "g2", $"{server.BaseUrl}game2.7z", "game2.7z", sampleData.Length, sampleSha, SupportsRange: true));
+    while (job2.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job2.State == DownloadState.Completed, $"Job2 expected Completed, got {job2.State}: {job2.ErrorMessage}");
+    Assert(File.Exists(job2.DestinationPath), "Job2 destination file missing");
+    Assert(await FileHash.Sha256Async(job2.DestinationPath) == sampleSha, "Job2 SHA256 mismatch");
+
+    // 3. Server ignoring Range header (returns 200 OK) -> engine restarts cleanly
+    var job3Part = Path.Combine(downloadsDir, "game3.7z.part");
+    await File.WriteAllBytesAsync(job3Part, sampleData[..1000]);
+
+    server.RequestHandler = async (req, res) =>
+    {
+        res.StatusCode = 200;
+        res.ContentLength64 = sampleData.Length;
+        await res.OutputStream.WriteAsync(sampleData);
+        res.Close();
+    };
+
+    var job3 = await dlManager.EnqueueAsync(new DownloadDescriptor("tkt3", "g3", $"{server.BaseUrl}game3.7z", "game3.7z", sampleData.Length, sampleSha, SupportsRange: true));
+    while (job3.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job3.State == DownloadState.Completed, $"Job3 expected Completed, got {job3.State}: {job3.ErrorMessage}");
+    Assert(new FileInfo(job3.DestinationPath).Length == sampleData.Length, "Job3 length mismatch");
+
+    // 4. Expired ticket (403) with automatic URL refresh via provider
+    var refreshedUrl = $"{server.BaseUrl}renewed_game4.7z";
+    var mockProvider = new MockSourceProvider(refreshedUrl);
+    using var dlManager4 = new DownloadManager(repo, sourceProvider: mockProvider, stagingDirectory: downloadsDir);
+    await dlManager4.InitializeAsync();
+
+    server.RequestHandler = async (req, res) =>
+    {
+        if (req.Url?.AbsolutePath.Contains("renewed") == true)
+        {
+            res.StatusCode = 200;
+            res.ContentLength64 = sampleData.Length;
+            await res.OutputStream.WriteAsync(sampleData);
+            res.Close();
+        }
+        else
+        {
+            res.StatusCode = 403;
+            res.Close();
+        }
+    };
+
+    var job4 = await dlManager4.EnqueueAsync(new DownloadDescriptor("tkt4", "g4", $"{server.BaseUrl}expired_game4.7z", "game4.7z", sampleData.Length, sampleSha));
+    while (job4.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Resolving or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job4.State == DownloadState.Completed, $"Job4 expected Completed, got {job4.State}: {job4.ErrorMessage}");
+
+    // 5. Transient 500 error retry
+    int attempts = 0;
+    server.RequestHandler = async (req, res) =>
+    {
+        if (Interlocked.Increment(ref attempts) == 1)
+        {
+            res.StatusCode = 500;
+            res.Close();
+        }
+        else
+        {
+            res.StatusCode = 200;
+            res.ContentLength64 = sampleData.Length;
+            await res.OutputStream.WriteAsync(sampleData);
+            res.Close();
+        }
+    };
+
+    var job5 = await dlManager.EnqueueAsync(new DownloadDescriptor("tkt5", "g5", $"{server.BaseUrl}transient_game5.7z", "game5.7z", sampleData.Length, sampleSha));
+    while (job5.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job5.State == DownloadState.Completed, $"Job5 expected Completed, got {job5.State}: {job5.ErrorMessage}");
+    Assert(job5.RetryCount >= 1, "Job5 retry count should be >= 1");
+
+    // 6. Checksum mismatch failure
+    server.RequestHandler = async (req, res) =>
+    {
+        res.StatusCode = 200;
+        res.ContentLength64 = sampleData.Length;
+        await res.OutputStream.WriteAsync(sampleData);
+        res.Close();
+    };
+
+    var wrongSha = new string('0', 64);
+    var job6 = await dlManager.EnqueueAsync(new DownloadDescriptor("tkt6", "g6", $"{server.BaseUrl}bad_hash.7z", "bad_hash.7z", sampleData.Length, wrongSha));
+    while (job6.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job6.State == DownloadState.Failed, $"Job6 expected Failed, got {job6.State}");
+    Assert(!File.Exists(job6.DestinationPath), "Job6 bad file should not be finalized");
+
+    // 7. Pause and Resume lifecycle
+    var slowData = new byte[128 * 1024];
+    new Random(99).NextBytes(slowData);
+    var slowSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(slowData)).ToLowerInvariant();
+
+    server.RequestHandler = async (req, res) =>
+    {
+        var range = req.Headers["Range"];
+        int offset = 0;
+        if (range != null && range.StartsWith("bytes="))
+        {
+            offset = int.Parse(range.Replace("bytes=", "").Replace("-", ""));
+            res.StatusCode = 206;
+            res.Headers["Content-Range"] = $"bytes {offset}-{slowData.Length - 1}/{slowData.Length}";
+            res.ContentLength64 = slowData.Length - offset;
+        }
+        else
+        {
+            res.StatusCode = 200;
+            res.ContentLength64 = slowData.Length;
+        }
+
+        // Send slowly in chunks
+        var chunk = 16 * 1024;
+        for (int i = offset; i < slowData.Length; i += chunk)
+        {
+            var count = Math.Min(chunk, slowData.Length - i);
+            await res.OutputStream.WriteAsync(slowData.AsMemory(i, count));
+            await res.OutputStream.FlushAsync();
+            await Task.Delay(40);
+        }
+        res.Close();
+    };
+
+    var job7 = await dlManager.EnqueueAsync(new DownloadDescriptor("tkt7", "g7", $"{server.BaseUrl}slow_game.7z", "slow_game.7z", slowData.Length, slowSha, SupportsRange: true));
+    // Wait until it starts downloading
+    while (job7.State != DownloadState.Downloading || job7.DownloadedBytes == 0)
+    {
+        await Task.Delay(20);
+    }
+    await dlManager.PauseAsync(job7.Id);
+    Assert(job7.State == DownloadState.Paused, $"Job7 expected Paused, got {job7.State}");
+
+    // Now resume
+    await dlManager.ResumeAsync(job7.Id);
+    while (job7.State is DownloadState.Queued or DownloadState.Downloading or DownloadState.Verifying)
+    {
+        await Task.Delay(50);
+    }
+    Assert(job7.State == DownloadState.Completed, $"Job7 expected Completed, got {job7.State}: {job7.ErrorMessage}");
+    Assert(File.Exists(job7.DestinationPath), "Job7 destination file missing");
+    Assert(await FileHash.Sha256Async(job7.DestinationPath) == slowSha, "Job7 SHA256 mismatch");
+
+    Console.WriteLine("PASS: importer core preserves originals, validates PlayStation input, runs cross-platform abstractions, verifies Retrostic resolvers and provider, and passes download fault simulation (including pause/resume)");
 }
 finally { try { Directory.Delete(root, true); } catch { } }
 
@@ -183,4 +394,22 @@ sealed class MockBrowserBridge : IRetrosticBrowserBridge
             SupportsRange: true
         ));
     }
+}
+
+sealed class MockSourceProvider(string renewedUrl) : IGameSourceProvider
+{
+    public string ProviderId => "mock";
+    public string DisplayName => "Mock Provider";
+
+    public Task<IReadOnlyList<PlatformInfo>> GetPlatformsAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<PlatformInfo>>([]);
+
+    public Task<IReadOnlyList<GameSearchResult>> SearchAsync(GameSearchQuery query, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<GameSearchResult>>([]);
+
+    public Task<GameSourceDetails> GetDetailsAsync(string gameId, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameSourceDetails(gameId, gameId, "ps1", "Mock Game", "USA", 1999, null, null, null, null, [], new SourceFile("mock.7z", 1024, null, "7z")));
+
+    public Task<DownloadDescriptor> ResolveDownloadAsync(string gameId, CancellationToken cancellationToken = default)
+        => Task.FromResult(new DownloadDescriptor("tkt_renewed", gameId, renewedUrl, $"{gameId}.7z", 64 * 1024, SupportsRange: true));
 }

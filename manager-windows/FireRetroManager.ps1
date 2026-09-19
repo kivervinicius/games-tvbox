@@ -595,7 +595,7 @@ $sidebar = [Windows.Forms.Panel]::new(); $sidebar.Location = [Drawing.Point]::ne
 $sideBrand = [Windows.Forms.Label]::new(); $sideBrand.Text = "FIRERETRO`nMANAGER"; $sideBrand.AutoSize = $true; $sideBrand.Location = [Drawing.Point]::new(22, 28); $sideBrand.Font = [Drawing.Font]::new('Segoe UI', 14, [Drawing.FontStyle]::Bold); $sideBrand.ForeColor = [Drawing.Color]::FromArgb(116, 239, 255); $sidebar.Controls.Add($sideBrand)
 function New-NavigationButton { param([string]$Text, [int]$Top) $button = [Windows.Forms.Button]::new(); $button.Text = $Text; $button.Size = [Drawing.Size]::new(154, 42); $button.Location = [Drawing.Point]::new(18, $Top); Apply-ButtonStyle $button; $sidebar.Controls.Add($button); return $button }
 $navHome = New-NavigationButton 'Início' 120
-$navTheme = New-NavigationButton 'Slides e aparência' 170
+$navTheme = New-NavigationButton 'Temas e aparência' 170
 $navLibrary = New-NavigationButton 'Jogos e pastas' 220
 $navRemote = New-NavigationButton 'Controle e Fire TV' 270
 $sideHint = [Windows.Forms.Label]::new(); $sideHint.Text = "As preferências são guardadas`nno seu computador."; $sideHint.AutoSize = $true; $sideHint.Location = [Drawing.Point]::new(20, 585); $sideHint.ForeColor = [Drawing.Color]::FromArgb(186, 207, 245); $sidebar.Controls.Add($sideHint)
@@ -609,7 +609,7 @@ $remoteRestart = [Windows.Forms.Button]::new(); $remoteRestart.Text = 'Reiniciar
 Apply-ButtonStyle $choose; Apply-ButtonStyle $remoteOpen; Apply-ButtonStyle $remoteRestart
 
 $githubButton = [Windows.Forms.Button]::new(); $githubButton.Text = 'Catálogo GitHub'; $githubButton.Width = 150; $githubButton.Location = [Drawing.Point]::new(765, 134); $form.Controls.Add($githubButton); Apply-ButtonStyle $githubButton
-$coverGroup = [Windows.Forms.GroupBox]::new(); $coverGroup.Text = 'Slides e aparência'; $coverGroup.ForeColor = [Drawing.Color]::FromArgb(116, 239, 255); $coverGroup.Font = [Drawing.Font]::new('Segoe UI', 11, [Drawing.FontStyle]::Bold); $coverGroup.Location = [Drawing.Point]::new(220, 244); $coverGroup.Size = [Drawing.Size]::new(855, 238); $form.Controls.Add($coverGroup)
+$coverGroup = [Windows.Forms.GroupBox]::new(); $coverGroup.Text = 'Temas e aparência'; $coverGroup.ForeColor = [Drawing.Color]::FromArgb(116, 239, 255); $coverGroup.Font = [Drawing.Font]::new('Segoe UI', 11, [Drawing.FontStyle]::Bold); $coverGroup.Location = [Drawing.Point]::new(220, 244); $coverGroup.Size = [Drawing.Size]::new(855, 238); $form.Controls.Add($coverGroup)
 $gameNameLabel = [Windows.Forms.Label]::new(); $gameNameLabel.Text = 'Título do slide'; $gameNameLabel.AutoSize = $true; $gameNameLabel.Location = [Drawing.Point]::new(18, 30); $coverGroup.Controls.Add($gameNameLabel)
 $gameName = [Windows.Forms.TextBox]::new(); $gameName.Width = 300; $gameName.Location = [Drawing.Point]::new(18, 54); $coverGroup.Controls.Add($gameName)
 $captionLabel = [Windows.Forms.Label]::new(); $captionLabel.Text = 'Legenda'; $captionLabel.AutoSize = $true; $captionLabel.Location = [Drawing.Point]::new(18, 88); $coverGroup.Controls.Add($captionLabel)
@@ -657,6 +657,10 @@ Refresh-ThemeEditor
 $remoteControl = [Windows.Forms.Button]::new(); $remoteControl.Text = 'Enviar configurações do controle'; $remoteControl.Width = 250; $remoteControl.Location = [Drawing.Point]::new(220, 194); $form.Controls.Add($remoteControl); Apply-ButtonStyle $remoteControl -Primary
 $syncCatalog = [Windows.Forms.Button]::new(); $syncCatalog.Text = 'Sincronizar catálogo'; $syncCatalog.Width = 190; $syncCatalog.Location = [Drawing.Point]::new(650, 194); $form.Controls.Add($syncCatalog); Apply-ButtonStyle $syncCatalog -Primary
 $privateImport = [Windows.Forms.Button]::new(); $privateImport.Text = 'Importar e publicar privado'; $privateImport.Width = 220; $privateImport.Location = [Drawing.Point]::new(855, 194); $form.Controls.Add($privateImport); Apply-ButtonStyle $privateImport
+$themeCreate = [Windows.Forms.Button]::new(); $themeCreate.Text = 'Criar tema do fundo'; $themeCreate.Width = 170; $themeCreate.Location = [Drawing.Point]::new(220, 490); $form.Controls.Add($themeCreate); Apply-ButtonStyle $themeCreate -Primary
+$themePublish = [Windows.Forms.Button]::new(); $themePublish.Text = 'Publicar tema GitHub'; $themePublish.Width = 170; $themePublish.Location = [Drawing.Point]::new(395, 490); $form.Controls.Add($themePublish); Apply-ButtonStyle $themePublish
+$appsCatalog = [Windows.Forms.Button]::new(); $appsCatalog.Text = 'Apps Android'; $appsCatalog.Width = 150; $appsCatalog.Location = [Drawing.Point]::new(570, 490); $form.Controls.Add($appsCatalog); Apply-ButtonStyle $appsCatalog
+$appsPublish = [Windows.Forms.Button]::new(); $appsPublish.Text = 'Publicar apps'; $appsPublish.Width = 140; $appsPublish.Location = [Drawing.Point]::new(725, 490); $form.Controls.Add($appsPublish); Apply-ButtonStyle $appsPublish
 $status = [Windows.Forms.Label]::new(); $status.Text = '●  Desconectado'; $status.AutoSize = $true; $status.Location = [Drawing.Point]::new(490, 202); $status.Font = [Drawing.Font]::new('Segoe UI', 11, [Drawing.FontStyle]::Bold); $status.ForeColor = [Drawing.Color]::FromArgb(255, 195, 90); $form.Controls.Add($status)
 $details = [Windows.Forms.TextBox]::new(); $details.Multiline = $true; $details.ReadOnly = $true; $details.ScrollBars = 'Vertical'; $details.Dock = 'Bottom'; $details.Height = 190; $details.BackColor = [Drawing.Color]::FromArgb(15, 40, 84); $details.ForeColor = [Drawing.Color]::FromArgb(225, 235, 255); $details.Font = [Drawing.Font]::new('Consolas', 10); $details.BorderStyle = 'FixedSingle'; $form.Controls.Add($details)
 
@@ -699,6 +703,46 @@ $privateImport.Add_Click({
         if ($confirmation -ne [Windows.Forms.DialogResult]::Yes) { return }
         $result = Sync-FireStickToPrivateRepo -Serial "$($ip.Text):5555" -RepoPath $folder.SelectedPath
         $details.Text = "Biblioteca importada para:`r`n$($result.Import.Destination)`r`n`r`nCatálogo privado publicado: $($result.Published.Count) itens.`r`nROMs comerciais, saves e configurações não foram publicados no site público."
+    } catch { $details.Text = $_.Exception.Message }
+})
+$themeCreate.Add_Click({
+    try {
+        if (-not $script:SelectedCover) { $script:SelectedCover = Select-CoverImage }
+        if (-not $script:SelectedCover) { throw 'Escolha uma imagem para o fundo do tema.' }
+        $name = $gameName.Text.Trim(); if ([string]::IsNullOrWhiteSpace($name)) { $name = 'Meu tema' }
+        $id = ($name.ToLowerInvariant() -replace '[^a-z0-9]+','-').Trim('-'); if ($id.Length -lt 2) { $id = 'tema-personalizado' }
+        $themeRoot = Join-Path $script:CacheRoot 'themes'
+        $package = New-ThemePackage -Id $id -Name $name -BackgroundPath $script:SelectedCover -OutputRoot $themeRoot
+        $details.Text = "Tema criado e validado:`r`n$package`r`n`r`nUse Publicar tema GitHub para enviá-lo ao repositório privado."
+    } catch { $details.Text = $_.Exception.Message }
+})
+$themePublish.Add_Click({
+    try {
+        $themeRoot = Join-Path $script:CacheRoot 'themes'
+        $folder = [Windows.Forms.FolderBrowserDialog]::new(); $folder.Description = 'Escolha o checkout privado da biblioteca'
+        if ($folder.ShowDialog($form) -ne [Windows.Forms.DialogResult]::OK) { return }
+        $packages = @(Get-ChildItem -LiteralPath $themeRoot -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'theme.json') })
+        if ($packages.Count -eq 0) { throw 'Crie um tema antes de publicar.' }
+        $package = $packages | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        $result = Publish-ThemePackage -RepoPath $folder.SelectedPath -PackagePath $package.FullName
+        $details.Text = "Tema publicado:`r`n$($result.Name) ($($result.Id))`r`n`r`nAs TVs o encontrarão na próxima sincronização."
+    } catch { $details.Text = $_.Exception.Message }
+})
+$appsCatalog.Add_Click({
+    try {
+        $appsPath = Join-Path $script:CacheRoot 'apps.json'
+        if (-not (Test-Path -LiteralPath $appsPath)) { Export-AndroidAppCatalog -DestinationPath $appsPath -Apps @() | Out-Null }
+        Start-Process notepad.exe -ArgumentList "`"$appsPath`""
+        $details.Text = "Catálogo de apps aberto:`r`n$appsPath`r`n`r`nInforme título, pacote e fonte oficial ou caminho do APK; depois publique pelo fluxo privado."
+    } catch { $details.Text = $_.Exception.Message }
+})
+$appsPublish.Add_Click({
+    try {
+        $appsPath = Join-Path $script:CacheRoot 'apps.json'; if (-not (Test-Path $appsPath)) { throw 'Abra Apps Android e cadastre pelo menos um aplicativo.' }
+        $folder = [Windows.Forms.FolderBrowserDialog]::new(); $folder.Description = 'Escolha o checkout privado da biblioteca'
+        if ($folder.ShowDialog($form) -ne [Windows.Forms.DialogResult]::OK) { return }
+        $result = Publish-AndroidAppCatalog -RepoPath $folder.SelectedPath -CatalogPath $appsPath
+        $details.Text = "Catálogo de apps publicado.`r`nItens: $($result.Count)`r`n`r`nA TV os encontrará na próxima sincronização."
     } catch { $details.Text = $_.Exception.Message }
 })
 $coverChoose.Add_Click({ $script:SelectedCover = Select-CoverImage; if ($script:SelectedCover) { if ($coverPreview.Image) { $coverPreview.Image.Dispose(); $coverPreview.Image = $null }; $coverPreview.Image = [Drawing.Image]::FromFile($script:SelectedCover); $details.Text = "Imagem carregada. Escreva um título e selecione Adicionar slide." } })

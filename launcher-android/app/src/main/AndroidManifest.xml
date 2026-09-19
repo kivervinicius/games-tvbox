@@ -1,8 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.kiver.fireretro" android:versionCode="20260916" android:versionName="0.3.2">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.kiver.fireretro" android:versionCode="20260936" android:versionName="0.6.2">
     <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="28" />
     <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application android:theme="@style/AppTheme" android:label="Jogos Retro" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner" android:resizeableActivity="true">
         <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="true" android:icon="@drawable/fireretro_home_icon_v2" android:banner="@drawable/jogos_retro_banner">
         </activity>
@@ -13,5 +16,6 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
+        <receiver android:name=".InstallStatusReceiver" android:exported="false" />
     </application>
 </manifest>

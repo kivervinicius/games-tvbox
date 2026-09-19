@@ -3,14 +3,22 @@ build/
 launcher-android/build/
 launcher-android/tests/.build/
 android-sdk/
+.tools/
+importer-windows/**/bin/
+importer-windows/**/obj/
+importer-windows/artifacts/
+importer-windows/.packages/
+*.csproj.user
 
 # Local signing material and runtime caches
 *.keystore
 *.jks
 *.idsig
 .env
+.dev.vars
 manager-windows/user-data/
 manager-windows/cache/
+cloudflare/.wrangler/
 
 # User game content and saves
 roms/

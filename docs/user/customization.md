@@ -1,8 +1,16 @@
 # Personalização visual
 
-## Slides
+## Temas na TV
 
-O Manager guarda o tema no cache local e envia `slides.json` e as imagens para a pasta de tema do launcher. Cada slide possui imagem, título, legenda, intervalo de troca e opacidade.
+Abra **Aparência** pelo botão no topo ou pelo botão Menu. Escolha **Arcade moderno**, **Kalel e Kath** ou outro tema disponível. A escolha fica somente nesta TV e continua funcionando sem internet.
+
+Cada tema define fundo, cores, contraste e uma disposição aprovada para a galeria. A imagem é enquadrada sem esticar. Temas novos publicados pelo Manager aparecem depois da sincronização, mas não substituem o tema atual sozinhos.
+
+## Criar e publicar no Windows
+
+No Manager, use **Criar tema do fundo** para selecionar uma imagem e gerar um pacote validado. Use **Publicar tema GitHub** para enviar o pacote ao checkout privado. A próxima sincronização da TV salva o tema na lista local para escolha pelo controle.
+
+As imagens antigas de slides podem ser usadas como fundos. O Manager continua servindo para enviar capas e ROMs; a escolha do visual é feita na própria TV.
 
 ## Capas e agrupamentos
 

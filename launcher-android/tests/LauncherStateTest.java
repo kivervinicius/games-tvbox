@@ -11,9 +11,12 @@ public final class LauncherStateTest {
         assertEquals("TODOS", LauncherState.normalizePlatform(null), "empty platform defaults to all");
         assertEquals("SNES", LauncherState.normalizePlatform("SNES"), "known platform remains selected");
         assertEquals("TODOS", LauncherState.normalizePlatform("Arcade"), "unknown platform defaults to all");
+        assertEquals("APPS", LauncherState.normalizePlatform("APPS"), "Android apps category remains selectable");
         assertTrue(LauncherState.matchesFilter("Super Mario Kart", "SNES", "SNES", "mario"), "search matches inside selected platform");
         assertTrue(!LauncherState.matchesFilter("Sonic", "Mega Drive", "SNES", ""), "platform filter excludes other consoles");
         assertTrue(!LauncherState.matchesFilter("Super Mario Kart", "SNES", "SNES", "zelda"), "search excludes unrelated game");
+        assertTrue(LauncherState.matchesFavorite(true, "Super Mario Kart", "mario"), "favorite search matches its game");
+        assertTrue(!LauncherState.matchesFavorite(false, "Super Mario Kart", "mario"), "non-favorites stay out of favorites");
     }
 
     private static void assertEquals(Object expected, Object actual, String scenario) {

@@ -54,13 +54,29 @@ public final class RemoteLibrarySync {
     private void sync(String manifestUrl, String token, long reserveBytes, Listener listener) {
         HttpURLConnection connection = null;
         try {
-            if (manifestUrl == null || !manifestUrl.startsWith("https://")) throw new Exception("URL HTTPS inválida");
-            connection = (HttpURLConnection) new URL(manifestUrl).openConnection();
+            String endpoint = RemoteLibraryEndpoint.manifestUrl(manifestUrl);
+            if (endpoint.isEmpty() || !endpoint.startsWith("https://")) throw new Exception("URL HTTPS inválida");
+            connection = (HttpURLConnection) new URL(endpoint).openConnection();
             connection.setConnectTimeout(15000); connection.setReadTimeout(30000);
-            connection.setRequestProperty("Accept", "application/json");
-            if (token != null && !token.trim().isEmpty()) connection.setRequestProperty("Authorization", "Bearer " + token.trim());
-            if (connection.getResponseCode() < 200 || connection.getResponseCode() >= 300) throw new Exception("Catálogo remoto indisponível (" + connection.getResponseCode() + ")");
+            connection.setRequestProperty("Accept", endpoint.contains("api.github.com/repos/") ? "application/vnd.github.raw+json" : "application/json");
+            connection.setRequestProperty("User-Agent", "JogosRetro/1.0");
+            if (!RemoteLibraryEndpoint.authorizationScheme(token).isEmpty()) connection.setRequestProperty("Authorization", "Bearer " + token.trim());
+            int response = connection.getResponseCode();
+            if (response < 200 || response >= 300) throw new Exception("Catálogo remoto indisponível (" + response + ")");
             JSONObject manifest = new JSONObject(readAll(connection.getInputStream()));
+            JSONArray remoteThemes = manifest.optJSONArray("themes");
+            if (remoteThemes != null) {
+                File themesFile = new File(catalogFile.getParentFile(), "themes.json");
+                themesFile.getParentFile().mkdirs();
+                FileOutputStream themeOutput = new FileOutputStream(themesFile, false); themeOutput.write(remoteThemes.toString().getBytes("UTF-8")); themeOutput.close();
+            }
+            JSONArray remoteApps = manifest.optJSONArray("apps");
+            if (remoteApps != null) {
+                File appsFile = new File(catalogFile.getParentFile(), "apps.json");
+                appsFile.getParentFile().mkdirs();
+                JSONObject appsRoot = new JSONObject(); appsRoot.put("version", 1); appsRoot.put("items", remoteApps);
+                FileOutputStream appsOutput = new FileOutputStream(appsFile, false); appsOutput.write(appsRoot.toString().getBytes("UTF-8")); appsOutput.close();
+            }
             JSONArray items = manifest.optJSONArray("items");
             if (items == null) throw new Exception("Formato de catálogo inválido");
             List<JSONObject> pending = new ArrayList<>();
@@ -89,10 +105,12 @@ public final class RemoteLibrarySync {
         if (freeSpace - expected < reserveBytes) { listener.onError(id, label, "Espaço insuficiente"); return; }
         File destination = new File(path); File parent=destination.getParentFile(); if(parent==null) throw new Exception("Caminho inválido"); parent.mkdirs();
         File part = new File(destination.getAbsolutePath() + ".part");
-        HttpURLConnection c=(HttpURLConnection)new URL(item.optString("downloadUrl", "")).openConnection();
+        String assetUrl = item.optString("assetApiUrl", item.optString("downloadUrl", ""));
+        HttpURLConnection c=(HttpURLConnection)new URL(assetUrl).openConnection();
         try {
-            c.setConnectTimeout(15000); c.setReadTimeout(30000); if(token!=null&&!token.trim().isEmpty()) c.setRequestProperty("Authorization", "Bearer "+token.trim());
-            if(c.getResponseCode()<200||c.getResponseCode()>=300) throw new Exception("Download indisponível ("+c.getResponseCode()+")");
+            c.setConnectTimeout(15000); c.setReadTimeout(30000); c.setRequestProperty("User-Agent", "JogosRetro/1.0"); c.setRequestProperty("Accept", assetUrl.contains("api.github.com/") ? "application/octet-stream" : "application/octet-stream"); if(!RemoteLibraryEndpoint.authorizationScheme(token).isEmpty()) c.setRequestProperty("Authorization", "Bearer "+token.trim());
+            int response = c.getResponseCode();
+            if(response<200||response>=300) throw new Exception("Download indisponível ("+response+")");
             MessageDigest digest=MessageDigest.getInstance("SHA-256"); long done=0; byte[] buffer=new byte[32768];
             try(InputStream input=new BufferedInputStream(c.getInputStream()); BufferedOutputStream output=new BufferedOutputStream(new FileOutputStream(part,false))){
                 int read; while((read=input.read(buffer))!=-1){ if(stopped) throw new Exception("Download interrompido"); output.write(buffer,0,read); digest.update(buffer,0,read); done+=read; listener.onProgress(id,label,done,expected,queueRemaining); }
@@ -100,14 +118,14 @@ public final class RemoteLibrarySync {
             if(done!=expected) throw new Exception("Tamanho recebido diferente do manifesto");
             if(!hex(digest.digest()).equalsIgnoreCase(item.optString("sha256"))) throw new Exception("Verificação SHA-256 falhou");
             if(!part.renameTo(destination)) throw new Exception("Não foi possível concluir o arquivo");
-            installCover(item); mergeCatalog(item); listener.onItemInstalled(id,label);
+            installCover(item, token); mergeCatalog(item); listener.onItemInstalled(id,label);
         } finally { c.disconnect(); if(part.isFile()&&stopped) part.delete(); }
     }
 
-    private void installCover(JSONObject item) {
-        String image=item.optString("image", ""), url=item.optString("coverUrl", ""); if(image.isEmpty()||url.isEmpty()||!url.startsWith("https://")) return;
+    private void installCover(JSONObject item, String token) {
+        String image=item.optString("image", ""), url=item.optString("coverApiUrl", item.optString("coverUrl", "")); if(image.isEmpty()||url.isEmpty()||!url.startsWith("https://")) return;
         File target=new File(coverRoot,new File(image).getName()); if(target.isFile()) return; coverRoot.mkdirs();
-        try { HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(20000); if(c.getResponseCode()>=200&&c.getResponseCode()<300){try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(target)){byte[] b=new byte[16384];int n;while((n=in.read(b))!=-1)out.write(b,0,n);}} c.disconnect(); } catch(Exception ignored) { }
+        try { HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection(); c.setConnectTimeout(10000); c.setReadTimeout(20000); c.setRequestProperty("User-Agent", "JogosRetro/1.0"); c.setRequestProperty("Accept", "application/octet-stream"); if(!RemoteLibraryEndpoint.authorizationScheme(token).isEmpty()) c.setRequestProperty("Authorization", "Bearer "+token.trim()); if(c.getResponseCode()>=200&&c.getResponseCode()<300){try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(target)){byte[] b=new byte[16384];int n;while((n=in.read(b))!=-1)out.write(b,0,n);}} c.disconnect(); } catch(Exception ignored) { }
     }
 
     private void mergeCatalog(JSONObject item) throws Exception {

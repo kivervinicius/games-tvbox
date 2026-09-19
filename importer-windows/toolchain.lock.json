@@ -1,0 +1,7 @@
+{
+  "id": "mame-chdman",
+  "version": "0.289",
+  "license": "BSD-3-Clause",
+  "source": "https://github.com/mamedev/mame/tree/mame0289",
+  "sha256": "8a74468e3b0879698835b57c3b58e88e5a51e4de73bee6ef755c28530b5b040f"
+}

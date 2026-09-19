@@ -152,5 +152,20 @@ $site=Get-Content (Join-Path $root 'catalog-site/index.html') -Raw
 Assert ($site -match 'catalog.public.json' -and $site -match 'textContent' -and $site -notmatch 'innerHTML') 'Gallery must fetch safely and avoid HTML injection.'
 $workflow=Get-Content (Join-Path $root '.github/workflows/pages.yml') -Raw
 Assert ($workflow -match 'path: catalog-site' -and $workflow -match 'workflow_dispatch') 'Pages must deploy only the static folder explicitly.'
+$themeFixture=Join-Path ([IO.Path]::GetTempPath()) ('theme-source-'+[guid]::NewGuid().ToString('N'))
+try {
+    New-Item -ItemType Directory -Path $themeFixture -Force | Out-Null
+    $background=Join-Path $themeFixture 'family.png'; Set-Content -LiteralPath $background -Value 'fixture'
+    $package=New-ThemePackage -Id 'family-night' -Name 'Família à noite' -BackgroundPath $background -OutputRoot $themeFixture
+    Assert (Test-Path (Join-Path $package 'theme.json')) 'Theme package manifest was not created.'
+    $theme=Test-ThemePackage -PackagePath $package
+    Assert ($theme.id -eq 'family-night' -and $theme.scale -eq 'contain') 'Theme package fields did not round-trip.'
+    $rejected=$false; try { New-ThemePackage -Id 'Bad Theme' -Name 'Bad' -BackgroundPath $background -OutputRoot $themeFixture } catch { $rejected=$true }
+    Assert $rejected 'Theme IDs with spaces must be rejected.'
+} finally { if (Test-Path $themeFixture) { Remove-Item -LiteralPath $themeFixture -Recurse -Force } }
+$appCatalogPath=Join-Path ([IO.Path]::GetTempPath()) ('apps-'+[guid]::NewGuid().ToString('N')+'.json')
+try { $apps=Export-AndroidAppCatalog -DestinationPath $appCatalogPath -Apps @([pscustomobject]@{title='Asphalt 8';package='com.gameloft.android.ANMP.GloftA8HM';source='https://www.amazon.com/gp/mas/dl/android?p=com.gameloft.android.ANMP.GloftA8HM';category='Corrida'},[pscustomobject]@{title='Inválido';package='bad';source='secret'}) ; Assert (@($apps.items).Count -eq 1) 'Android app catalog must reject invalid entries.' } finally { Remove-Item -LiteralPath $appCatalogPath -Force -ErrorAction SilentlyContinue }
+$manager=Get-Content (Join-Path $root 'manager-windows/FireRetroManager.ps1') -Raw
+Assert ($manager -match 'Criar tema|Tema') 'Manager must expose theme creation.'
 & (Join-Path $root 'scripts/Test-PagesWorkflow.ps1')
 Write-Output 'PASS: GitHub catalog privacy, credential storage and Pages contract'

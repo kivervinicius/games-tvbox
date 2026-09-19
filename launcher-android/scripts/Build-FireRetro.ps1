@@ -2,10 +2,11 @@
 param(
     [string]$OutputRoot = (Join-Path (Split-Path $PSScriptRoot -Parent) 'build'),
     [string]$JavaRoot = 'C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2024.1.4\jbr',
-    [string]$SdkRoot = $(if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'android-sdk' }),
+    [string]$SdkRoot = $(if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif (Test-Path (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'android-sdk')) { Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'android-sdk' } else { Join-Path $env:USERPROFILE '.codex\android-sdk-games-tvbox' }),
     [string]$KeystorePath = $env:FIRERETRO_KEYSTORE,
     [string]$KeystoreAlias = $env:FIRERETRO_KEY_ALIAS,
-    [string]$KeystorePassword = $env:FIRERETRO_KEY_PASSWORD
+    [string]$KeystorePassword = $env:FIRERETRO_KEY_PASSWORD,
+    [string]$CloudOrigin = $env:FIRERETRO_CLOUD_ORIGIN
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,11 +21,16 @@ foreach ($required in @($androidJar, (Join-Path $buildTools 'aapt2.exe'), (Join-
 if ([string]::IsNullOrWhiteSpace($KeystorePath) -or -not (Test-Path -LiteralPath $KeystorePath)) { throw 'Provide an external signing keystore with -KeystorePath or FIRERETRO_KEYSTORE.' }
 if ([string]::IsNullOrWhiteSpace($KeystoreAlias)) { throw 'Provide -KeystoreAlias or FIRERETRO_KEY_ALIAS.' }
 if ([string]::IsNullOrWhiteSpace($KeystorePassword)) { throw 'Provide -KeystorePassword or FIRERETRO_KEY_PASSWORD.' }
+if (-not [string]::IsNullOrWhiteSpace($CloudOrigin)) {
+    try { $uri = [Uri]$CloudOrigin; if ($uri.Scheme -ne 'https' -or [string]::IsNullOrWhiteSpace($uri.Host) -or $uri.AbsolutePath -notin @('', '/')) { throw 'invalid' }; $CloudOrigin = 'https://' + $uri.Host.ToLowerInvariant() + ($(if ($uri.Port -gt 0 -and $uri.Port -ne 443) { ':' + $uri.Port } else { '' })) }
+    catch { throw 'Provide -CloudOrigin as an HTTPS Worker origin without a path.' }
+} else { Write-Warning 'CloudOrigin is empty; this APK will run offline until rebuilt with -CloudOrigin.' }
 
 New-Item -ItemType Directory -Force -Path $release | Out-Null
 $compiledResources = Join-Path $release 'compiled-resources.zip'
 $baseApk = Join-Path $release 'base.apk'
 $generated = Join-Path $release 'gen'
+$cloudEndpoint = Join-Path $generated 'com\kiver\fireretro\CloudApiEndpoint.java'
 $classes = Join-Path $release 'classes'
 $dex = Join-Path $release 'dex'
 $unsigned = Join-Path $release 'unsigned.apk'
@@ -38,11 +44,37 @@ if ($LASTEXITCODE -ne 0) { throw 'Android resources did not compile' }
 if ($LASTEXITCODE -ne 0) { throw 'Android package resources did not link' }
 
 New-Item -ItemType Directory -Force -Path $classes, $dex | Out-Null
+$sourceCloud = Get-Content (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\CloudApiEndpoint.java') -Raw
+if (-not [string]::IsNullOrWhiteSpace($CloudOrigin)) { $sourceCloud = [regex]::Replace($sourceCloud, 'DEFAULT_ORIGIN\s*=\s*"[^"]*"', 'DEFAULT_ORIGIN = "' + $CloudOrigin + '"') }
+New-Item -ItemType Directory -Force -Path (Split-Path $cloudEndpoint -Parent) | Out-Null
+[System.IO.File]::WriteAllText($cloudEndpoint, $sourceCloud, [System.Text.UTF8Encoding]::new($false))
 $sourceFiles = @(
     (Join-Path $generated 'com\kiver\fireretro\R.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\LauncherState.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ThemeState.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ThemeCatalog.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ThemeCustomization.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\TvNavigationState.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ControllerInputRouter.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\TvFocusCoordinator.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\DeviceStateThrottle.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\SafeAreaProfile.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\LibraryUiState.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ThemeProfile.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\StoragePaths.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ControllerProfile.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ControllerRegistry.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\SettingsNavigation.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\ControllerState.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\RemoteLibraryEndpoint.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\AndroidAppEntry.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\AndroidAppSource.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\AndroidAppInstaller.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\InstallStatusReceiver.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\RemoteLibrarySettings.java'),
+    $cloudEndpoint,
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\CloudDeviceClient.java'),
+    (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\CloudLibrarySync.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\RemoteLibrarySync.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\CatalogStore.java'),
     (Join-Path $appRoot 'app\src\main\java\com\kiver\fireretro\MainActivity.java')
@@ -53,7 +85,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Launcher Java source did not compile' }
 $env:JAVA_HOME = $JavaRoot
 $env:PATH = (Join-Path $JavaRoot 'bin') + ';' + $env:PATH
 $classFiles = Get-ChildItem $classes -Recurse -Filter '*.class' | ForEach-Object FullName
-& (Join-Path $buildTools 'd8.bat') --min-api 28 --output $dex $classFiles
+$classList = Join-Path $release 'classes.args'
+($classFiles | ForEach-Object { $_ }) | Set-Content -LiteralPath $classList -Encoding ascii
+& (Join-Path $buildTools 'd8.bat') --min-api 28 --output $dex "@$classList"
 if ($LASTEXITCODE -ne 0) { throw 'Launcher dex generation failed' }
 
 Copy-Item -LiteralPath $baseApk -Destination $unsigned

@@ -1,0 +1,56 @@
+name: Deploy private Jogos Retro Cloud
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: jogos-retro-cloud-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Cloudflare API tests
+        run: node --test cloudflare/tests/*.test.mjs
+      - name: Verify private configuration is complete
+        shell: pwsh
+        run: |
+          $toml = Get-Content cloudflare/wrangler.toml -Raw
+          if ($toml -match 'REPLACE_WITH') { throw 'Complete Cloudflare IDs, Access policy values, and Worker URL in cloudflare/wrangler.toml before deploying.' }
+          foreach ($name in @('CLOUDFLARE_API_TOKEN','CLOUDFLARE_ACCOUNT_ID','R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','ACCESS_TEAM_DOMAIN','ACCESS_AUD','ADMIN_EMAIL','EXPECTED_SIGNER_SHA256')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "Missing GitHub Actions secret: $name" }
+          }
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          ACCESS_TEAM_DOMAIN: ${{ secrets.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ secrets.ACCESS_AUD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          EXPECTED_SIGNER_SHA256: ${{ secrets.EXPECTED_SIGNER_SHA256 }}
+      - name: Deploy Worker and admin panel
+        shell: bash
+        working-directory: cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          ACCESS_TEAM_DOMAIN: ${{ secrets.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ secrets.ACCESS_AUD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          EXPECTED_SIGNER_SHA256: ${{ secrets.EXPECTED_SIGNER_SHA256 }}
+        run: |
+          printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | npx --yes wrangler@4 secret put R2_ACCOUNT_ID --config wrangler.toml
+          printf '%s' "$R2_ACCESS_KEY_ID" | npx --yes wrangler@4 secret put R2_ACCESS_KEY_ID --config wrangler.toml
+          printf '%s' "$R2_SECRET_ACCESS_KEY" | npx --yes wrangler@4 secret put R2_SECRET_ACCESS_KEY --config wrangler.toml
+          printf '%s' "$ACCESS_TEAM_DOMAIN" | npx --yes wrangler@4 secret put ACCESS_TEAM_DOMAIN --config wrangler.toml
+          printf '%s' "$ACCESS_AUD" | npx --yes wrangler@4 secret put ACCESS_AUD --config wrangler.toml
+          printf '%s' "$ADMIN_EMAIL" | npx --yes wrangler@4 secret put ADMIN_EMAIL --config wrangler.toml
+          printf '%s' "$EXPECTED_SIGNER_SHA256" | npx --yes wrangler@4 secret put EXPECTED_SIGNER_SHA256 --config wrangler.toml
+          npx --yes wrangler@4 deploy --config wrangler.toml

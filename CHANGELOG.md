@@ -19,3 +19,8 @@
 
 - caminhos do Manager foram tornados relativos ao checkout público;
 - catálogo e capas do Manager passaram a ficar no cache local.
+## 0.6.1
+
+- Detecta armazenamento removível do Fire TV e usa o pendrive para ROMs e downloads da biblioteca online.
+- Migra referências lógicas do catálogo sem apagar a cópia interna.
+- Atualiza favoritos do RetroArch com backup da playlist anterior.

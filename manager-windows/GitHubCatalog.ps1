@@ -115,6 +115,106 @@ function Export-PublicCatalog {
     return $payload
 }
 
+function Test-ThemePackage {
+    param([Parameter(Mandatory)][string]$PackagePath)
+    $root = (Resolve-Path -LiteralPath $PackagePath -ErrorAction Stop).Path
+    $manifestPath = Join-Path $root 'theme.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw 'O pacote de tema precisa de theme.json.' }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    if ([string]$manifest.id -notmatch '^[a-z0-9][a-z0-9-]{1,48}$') { throw 'O identificador do tema deve usar letras minúsculas, números e hífens.' }
+    if ([string]::IsNullOrWhiteSpace([string]$manifest.name)) { throw 'O tema precisa de um nome.' }
+    $overlay = 0
+    if (-not [int]::TryParse([string]$manifest.overlay,[ref]$overlay) -or $overlay -lt 0 -or $overlay -gt 90) { throw 'A opacidade deve ficar entre 0 e 90.' }
+    if ([string]$manifest.cardLayout -notin @('compact','wide')) { throw 'A disposição deve ser compact ou wide.' }
+    if ([string]$manifest.scale -notin @('contain','cover')) { throw 'O enquadramento deve ser contain ou cover.' }
+    $background = [string]$manifest.background
+    if ($background -notmatch '^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.(png|jpg|jpeg|webp)$' -or -not (Test-Path -LiteralPath (Join-Path $root $background) -PathType Leaf)) { throw 'O fundo do tema não foi encontrado.' }
+    return $manifest
+}
+
+function Export-AndroidAppCatalog {
+    param([Parameter(Mandatory)][string]$DestinationPath, [AllowEmptyCollection()][array]$Apps = @())
+    $items = @()
+    foreach ($app in $Apps) {
+        $title = [string](Get-CatalogPropertyValue $app 'title'); $package = [string](Get-CatalogPropertyValue $app 'package'); $source = [string](Get-CatalogPropertyValue $app 'source')
+        if ([string]::IsNullOrWhiteSpace($title) -or $package -notmatch '^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$' -or $source -notmatch '^(?:https://|/|[A-Za-z]:[\\/])') { continue }
+        $sourceType = if ($source -match '^https://') { 'store' } else { 'apk' }
+        $items += [pscustomobject][ordered]@{ title=$title.Trim(); package=$package; source=$source; sourceType=$sourceType; category=([string](Get-CatalogPropertyValue $app 'category')) }
+    }
+    $result = [pscustomobject][ordered]@{ version=1; generatedAt=(Get-Date).ToUniversalTime().ToString('o'); items=@($items | Sort-Object title) }
+    $result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $DestinationPath -Encoding utf8
+    return $result
+}
+
+function Publish-AndroidAppCatalog {
+    param([Parameter(Mandatory)][string]$RepoPath, [Parameter(Mandatory)][string]$CatalogPath)
+    $catalog = Get-Content -LiteralPath $CatalogPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    $valid = Export-AndroidAppCatalog -DestinationPath $CatalogPath -Apps @($catalog.items)
+    $resolved = (Resolve-Path -LiteralPath $RepoPath -ErrorAction Stop).Path.TrimEnd('\\','/')
+    if (Invoke-CatalogGit $resolved @('status','--porcelain')) { throw 'O checkout deve estar limpo antes da publicação.' }
+    Assert-PrivateGitHubRemote (Invoke-CatalogGit $resolved @('remote','get-url','--all','origin'))
+    Copy-Item -LiteralPath $CatalogPath -Destination (Join-Path $resolved 'apps.json') -Force
+    $manifestPath = Join-Path $resolved 'library.manifest.json'
+    $manifest = if (Test-Path $manifestPath) { Get-Content $manifestPath -Raw | ConvertFrom-Json } else { [pscustomobject]@{version=1;items=@();themes=@()} }
+    $manifest | Add-Member -NotePropertyName apps -NotePropertyValue @($valid.items) -Force
+    $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+    Invoke-CatalogGit $resolved @('add','--','apps.json','library.manifest.json') | Out-Null
+    $branch = Invoke-CatalogGit $resolved @('symbolic-ref','--short','HEAD')
+    Invoke-CatalogGit $resolved @('commit','-m','Update Android app catalog') | Out-Null
+    Invoke-CatalogGit $resolved @('push','origin',('HEAD:refs/heads/' + $branch)) | Out-Null
+    return [pscustomobject]@{ Published=$true; Count=@($valid.items).Count }
+}
+
+function New-ThemePackage {
+    param(
+        [Parameter(Mandatory)][string]$Id,
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$BackgroundPath,
+        [string]$AccentColor = '#38D9FF',
+        [int]$Overlay = 68,
+        [ValidateSet('compact','wide')][string]$CardLayout = 'compact',
+        [ValidateSet('contain','cover')][string]$Scale = 'contain',
+        [Parameter(Mandatory)][string]$OutputRoot
+    )
+    if ($Id -notmatch '^[a-z0-9][a-z0-9-]{1,48}$') { throw 'O identificador do tema deve usar letras minúsculas, números e hífens.' }
+    if (-not (Test-Path -LiteralPath $BackgroundPath -PathType Leaf)) { throw 'Escolha um arquivo de fundo existente.' }
+    if ($Overlay -lt 0 -or $Overlay -gt 90) { throw 'A opacidade deve ficar entre 0 e 90.' }
+    if ($AccentColor -notmatch '^#[0-9a-fA-F]{6}$') { throw 'A cor de destaque deve estar no formato #RRGGBB.' }
+    $extension = [IO.Path]::GetExtension($BackgroundPath).ToLowerInvariant()
+    if ($extension -notin @('.png','.jpg','.jpeg','.webp')) { throw 'O fundo deve ser PNG, JPG, JPEG ou WEBP.' }
+    $package = Join-Path ([IO.Path]::GetFullPath($OutputRoot)) $Id
+    New-Item -ItemType Directory -Path $package -Force | Out-Null
+    $background = 'background' + $extension
+    Copy-Item -LiteralPath $BackgroundPath -Destination (Join-Path $package $background) -Force
+    [ordered]@{ version=1; id=$Id; name=$Name.Trim(); background=$background; accent=$AccentColor.ToUpperInvariant(); overlay=$Overlay; cardLayout=$CardLayout; scale=$Scale } |
+        ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $package 'theme.json') -Encoding utf8
+    Test-ThemePackage -PackagePath $package | Out-Null
+    return $package
+}
+
+function Publish-ThemePackage {
+    param([Parameter(Mandatory)][string]$RepoPath, [Parameter(Mandatory)][string]$PackagePath)
+    $manifest = Test-ThemePackage -PackagePath $PackagePath
+    $resolved = (Resolve-Path -LiteralPath $RepoPath -ErrorAction Stop).Path.TrimEnd('\','/')
+    if (Invoke-CatalogGit $resolved @('status','--porcelain')) { throw 'O checkout deve estar limpo antes da publicação.' }
+    $remote = Invoke-CatalogGit $resolved @('remote','get-url','--all','origin')
+    Assert-PrivateGitHubRemote $remote
+    $destination = Join-Path $resolved ('themes/' + $manifest.id)
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $PackagePath '*') -Destination $destination -Recurse -Force
+    $libraryManifestPath = Join-Path $resolved 'library.manifest.json'
+    $library = if (Test-Path -LiteralPath $libraryManifestPath) { Get-Content -LiteralPath $libraryManifestPath -Raw | ConvertFrom-Json } else { [pscustomobject]@{ version=1; items=@(); themes=@() } }
+    $themes = @($library.themes | Where-Object { $_.id -ne $manifest.id })
+    $themes += [pscustomobject][ordered]@{ id=$manifest.id; name=$manifest.name; background=$manifest.background; accent=$manifest.accent; overlay=[int]$manifest.overlay; cardLayout=$manifest.cardLayout; scale=$manifest.scale; packagePath=('themes/' + $manifest.id) }
+    $library | Add-Member -NotePropertyName themes -NotePropertyValue @($themes) -Force
+    $library | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $libraryManifestPath -Encoding utf8
+    Invoke-CatalogGit $resolved @('add','--',('themes/' + $manifest.id),'library.manifest.json') | Out-Null
+    $branch = Invoke-CatalogGit $resolved @('symbolic-ref','--short','HEAD')
+    Invoke-CatalogGit $resolved @('commit','-m',('Add theme ' + $manifest.id)) | Out-Null
+    Invoke-CatalogGit $resolved @('push','origin',('HEAD:refs/heads/' + $branch)) | Out-Null
+    return [pscustomobject]@{ Published=$true; Id=$manifest.id; Name=$manifest.name; Path=$destination }
+}
+
 function New-RemoteLibraryManifest {
     param(
         [AllowEmptyCollection()][array]$Catalog = @(),
@@ -146,7 +246,7 @@ function New-RemoteLibraryManifest {
             releaseTag=$ReleaseTag; downloadUrl=('https://github.com/' + $Repository + '/releases/download/' + $ReleaseTag + '/' + [Uri]::EscapeDataString($assetName))
         }
     }
-    return [pscustomobject][ordered]@{ version=1; generatedAt=(Get-Date).ToUniversalTime().ToString('o'); repository=$Repository; items=@($items | Sort-Object platform,label) }
+    return [pscustomobject][ordered]@{ version=1; generatedAt=(Get-Date).ToUniversalTime().ToString('o'); repository=$Repository; items=@($items | Sort-Object platform,label); themes=@() }
 }
 
 function Export-RemoteLibraryManifest {

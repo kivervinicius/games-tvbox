@@ -1,0 +1,96 @@
+name: Importer Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['importer-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-chdman:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: mamedev/mame
+          ref: mame0289
+          path: mame
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git make
+            mingw-w64-x86_64-clang
+            mingw-w64-x86_64-lld
+            mingw-w64-x86_64-libc++
+            mingw-w64-x86_64-python
+      - name: Build fixed chdman from MAME source
+        shell: msys2 {0}
+        working-directory: mame
+        run: make -j2 SUBTARGET=tools TOOLS=1 NOWERROR=1 OVERRIDE_CC=clang OVERRIDE_CXX=clang++ chdman
+      - name: Collect chdman
+        shell: pwsh
+        run: |
+          $tool = Get-ChildItem mame -Filter chdman.exe -Recurse | Select-Object -First 1
+          if (-not $tool) { throw 'chdman.exe was not produced' }
+          New-Item -ItemType Directory -Force tool | Out-Null
+          Copy-Item $tool.FullName tool/chdman.exe
+          $hash = (Get-FileHash tool/chdman.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          @{ id='mame-chdman'; version='0.289'; license='BSD-3-Clause'; source='https://github.com/mamedev/mame/tree/mame0289'; sha256=$hash } | ConvertTo-Json | Set-Content tool/toolchain.lock.json -Encoding utf8
+          Copy-Item mame/COPYING tool/MAME-COPYING.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chdman-win-x64
+          path: tool
+
+  package:
+    needs: build-chdman
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/download-artifact@v4
+        with:
+          name: chdman-win-x64
+          path: importer-windows/release-tool
+      - name: Test
+        run: dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj --configfile importer-windows/NuGet.Config
+      - name: Publish self-contained importer
+        shell: pwsh
+        run: |
+          dotnet publish importer-windows/src/JogosRetroImporter/JogosRetroImporter.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o importer-windows/artifacts/publish --configfile importer-windows/NuGet.Config
+          New-Item -ItemType Directory -Force importer-windows/artifacts/publish/tools | Out-Null
+          Copy-Item importer-windows/release-tool/chdman.exe importer-windows/artifacts/publish/tools/chdman.exe
+          Copy-Item importer-windows/release-tool/toolchain.lock.json importer-windows/artifacts/publish/tools/toolchain.lock.json -Force
+          Copy-Item importer-windows/release-tool/MAME-COPYING.txt importer-windows/artifacts/publish/tools/MAME-COPYING.txt
+          Copy-Item importer-windows/.packages/sharpcompress/0.50.4/LICENSE.txt importer-windows/artifacts/publish/SharpCompress-LICENSE.txt -ErrorAction SilentlyContinue
+          Compress-Archive importer-windows/artifacts/publish/* importer-windows/artifacts/JogosRetroImporter-Portable.zip -Force
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" importer-windows/installer/JogosRetroImporter.iss
+      - name: Checksums and SPDX SBOM
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem importer-windows/artifacts -File | Where-Object Extension -in '.exe','.zip'
+          $files | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name } | Set-Content importer-windows/artifacts/SHA256SUMS.txt
+          $packages = dotnet list importer-windows/JogosRetroImporter.sln package --include-transitive | Out-String
+          @{ spdxVersion='SPDX-2.3'; dataLicense='CC0-1.0'; SPDXID='SPDXRef-DOCUMENT'; name='JogosRetroImporter'; documentNamespace=('https://github.com/kivervinicius/games-tvbox/sbom/'+[guid]::NewGuid()); creationInfo=@{created=(Get-Date).ToUniversalTime().ToString('o'); creators=@('Tool: JogosRetro GitHub Actions')}; annotations=@(@{annotationType='OTHER';annotator='Tool: dotnet-list-package';annotationDate=(Get-Date).ToUniversalTime().ToString('o');comment=$packages}) } | ConvertTo-Json -Depth 8 | Set-Content importer-windows/artifacts/sbom.spdx.json -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JogosRetroImporter-release
+          path: importer-windows/artifacts
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            importer-windows/artifacts/JogosRetroImporter-Setup.exe
+            importer-windows/artifacts/JogosRetroImporter-Portable.zip
+            importer-windows/artifacts/SHA256SUMS.txt
+            importer-windows/artifacts/sbom.spdx.json

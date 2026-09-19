@@ -1,0 +1,38 @@
+name = "jogos-retro-cloud"
+main = "worker/src/index.mjs"
+compatibility_date = "2026-09-16"
+workers_dev = true
+account_id = "783f9598d1ff8aa79d062c32cf72a4ec"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[[kv_namespaces]]
+binding = "CATALOG_KV"
+id = "ea53d00f43684ad58984c9bb1402ffb1"
+
+[[kv_namespaces]]
+binding = "DEVICE_KV"
+id = "d99995b96e4649f593a2e511f3029fa8"
+
+[[kv_namespaces]]
+binding = "PAIRING_KV"
+id = "42baf4531fc041d2ac6b80eea98271de"
+
+[[kv_namespaces]]
+binding = "RESERVATION_KV"
+id = "d74b79198ec949f0b237889bf9fd5b2a"
+
+[[r2_buckets]]
+binding = "PRIVATE_ASSETS"
+bucket_name = "games-tvbox-private"
+
+[vars]
+MAX_PRIVATE_BYTES = "8000000000"
+R2_BUCKET_NAME = "games-tvbox-private"
+R2_ACCOUNT_ID = "783f9598d1ff8aa79d062c32cf72a4ec"
+ACCESS_TEAM_DOMAIN = "https://bitter-flower-5039.cloudflareaccess.com"
+ADMIN_EMAIL = "kivervinicius@gmail.com"
+EXPECTED_SIGNER_SHA256 = "6fdb783135552eb93771d5c8228a3daff309053fadecf78b86de71be7b6f721f"

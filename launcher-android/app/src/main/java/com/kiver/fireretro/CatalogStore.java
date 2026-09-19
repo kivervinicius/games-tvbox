@@ -13,12 +13,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Loads the synchronized catalog while keeping the bundled catalog available offline. */
 public final class CatalogStore {
     private static final String EXTERNAL_CATALOG = "/sdcard/Android/data/com.kiver.fireretro/files/catalog/games.json";
-    private static final String ASSET_CATALOG = "assets/games.json";
+    private static final String ASSET_CATALOG = "games.json";
 
     private CatalogStore() { }
 
@@ -27,21 +29,30 @@ public final class CatalogStore {
         File external = externalCatalog != null
                 ? (externalCatalog.isDirectory() ? new File(externalCatalog, "catalog/games.json") : externalCatalog)
                 : new File(EXTERNAL_CATALOG);
+        List<CatalogGame> externalGames = Collections.emptyList();
         if (external.isFile()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(external))) {
-                List<CatalogGame> games = parse(reader);
-                if (!games.isEmpty()) return games;
+                externalGames = parse(reader);
             } catch (Exception ignored) { }
         }
+        List<CatalogGame> bundledGames = Collections.emptyList();
         try {
             AssetManager assets = context.getAssets();
-            try (InputStream stream = assets.open("games.json");
+            try (InputStream stream = assets.open(ASSET_CATALOG);
                  BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"))) {
-                return parse(reader);
+                bundledGames = parse(reader);
             }
         } catch (Exception ignored) {
-            return Collections.emptyList();
+            // An external catalog can still be used when the app asset is unavailable.
         }
+        return merge(bundledGames, externalGames);
+    }
+
+    static List<CatalogGame> merge(List<CatalogGame> bundled, List<CatalogGame> external) {
+        Map<String, CatalogGame> byPath = new LinkedHashMap<>();
+        for (CatalogGame game : bundled) if (game != null && !game.path.trim().isEmpty()) byPath.put(game.path, game);
+        for (CatalogGame game : external) if (game != null && !game.path.trim().isEmpty()) byPath.put(game.path, game);
+        return new ArrayList<>(byPath.values());
     }
 
     private static List<CatalogGame> parse(BufferedReader reader) throws Exception {
@@ -63,7 +74,8 @@ public final class CatalogStore {
             result.add(new CatalogGame(item.optString("label", "Jogo"), path,
                     item.optString("core_path", ""), item.optString("platform", "Outros"),
                     item.optString("image", ""), item.optString("description", ""),
-                    item.optInt("year", 0), tags, item.optBoolean("publicDownload", false), item.optLong("downloadedAt", 0L)));
+                    item.optInt("year", 0), tags, item.optBoolean("publicDownload", false), item.optLong("downloadedAt", 0L),
+                    item.optString("cloudId", item.optString("id", "")), item.optBoolean("remoteAvailable", false), item.optLong("size", 0L)));
         }
         return result;
     }
@@ -73,12 +85,15 @@ public final class CatalogStore {
         public final int year;
         public final List<String> tags;
         public final boolean publicDownload; public final long downloadedAt;
+        public final String cloudId; public final boolean remoteAvailable; public final long size;
 
         CatalogGame(String label, String path, String corePath, String platform, String image,
-                    String description, int year, List<String> tags, boolean publicDownload, long downloadedAt) {
+                    String description, int year, List<String> tags, boolean publicDownload, long downloadedAt,
+                    String cloudId, boolean remoteAvailable, long size) {
             this.label = label; this.path = path; this.corePath = corePath; this.platform = platform;
             this.image = image; this.description = description; this.year = year;
             this.tags = Collections.unmodifiableList(new ArrayList<>(tags)); this.publicDownload = publicDownload; this.downloadedAt = downloadedAt;
+            this.cloudId = cloudId; this.remoteAvailable = remoteAvailable; this.size = size;
         }
     }
 }

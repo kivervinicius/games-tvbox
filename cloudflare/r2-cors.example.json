@@ -1,0 +1,9 @@
+[
+  {
+    "AllowedOrigins": ["https://REPLACE_WITH_WORKER_URL"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["x-amz-checksum-sha256", "content-type"],
+    "ExposeHeaders": ["etag"],
+    "MaxAgeSeconds": 3600
+  }
+]

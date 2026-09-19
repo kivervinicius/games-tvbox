@@ -9,7 +9,38 @@ $thumbDir = Join-Path $root 'app\src\main\res\drawable-nodpi'
 $stateSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\LauncherState.java'
 $stateTest = Join-Path $PSScriptRoot 'LauncherStateTest.java'
 $themeSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeState.java'
+$themeCustomizationSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeCustomization.java'
 $themeTest = Join-Path $PSScriptRoot 'ThemeStateTest.java'
+$themeCatalogSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeCatalog.java'
+$controllerSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ControllerState.java'
+$themeCatalogTest = Join-Path $PSScriptRoot 'ThemeCatalogTest.java'
+$controllerTest = Join-Path $PSScriptRoot 'ControllerStateTest.java'
+$endpointSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\RemoteLibraryEndpoint.java'
+$endpointTest = Join-Path $PSScriptRoot 'RemoteLibraryEndpointTest.java'
+$cloudEndpointSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\CloudApiEndpoint.java'
+$cloudEndpointTest = Join-Path $PSScriptRoot 'CloudApiEndpointTest.java'
+$cloudClientSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\CloudDeviceClient.java'
+$cloudSyncSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\CloudLibrarySync.java'
+$appEntrySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\AndroidAppEntry.java'
+$appEntryTest = Join-Path $PSScriptRoot 'AndroidAppEntryTest.java'
+$appSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\AndroidAppSource.java'
+$appSourceTest = Join-Path $PSScriptRoot 'AndroidAppSourceTest.java'
+$settingsNavigationSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\SettingsNavigation.java'
+$settingsNavigationTest = Join-Path $PSScriptRoot 'SettingsNavigationTest.java'
+$navigationSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\TvNavigationState.java'
+$safeAreaSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\SafeAreaProfile.java'
+$libraryUiSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\LibraryUiState.java'
+$themeProfileSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeProfile.java'
+$navigationTest = Join-Path $PSScriptRoot 'TvNavigationStateTest.java'
+$inputRouterSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ControllerInputRouter.java'
+$inputRouterTest = Join-Path $PSScriptRoot 'ControllerInputRouterTest.java'
+$focusCoordinatorSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\TvFocusCoordinator.java'
+$focusCoordinatorTest = Join-Path $PSScriptRoot 'TvFocusCoordinatorTest.java'
+$stateThrottleSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\DeviceStateThrottle.java'
+$stateThrottleTest = Join-Path $PSScriptRoot 'DeviceStateThrottleTest.java'
+$safeAreaTest = Join-Path $PSScriptRoot 'SafeAreaProfileTest.java'
+$libraryUiTest = Join-Path $PSScriptRoot 'LibraryUiStateTest.java'
+$themeProfileTest = Join-Path $PSScriptRoot 'ThemeProfileTest.java'
 $catalogTest = Join-Path $PSScriptRoot 'catalog-store.tests.ps1'
 $buildScript = Join-Path $root 'scripts\Build-FireRetro.ps1'
 if (-not (Test-Path $manifest)) { throw 'Manifest is missing' }
@@ -19,42 +50,86 @@ if (-not (Test-Path $banner)) { throw 'The widescreen Fire TV banner is missing'
 if (-not (Test-Path $homeIcon)) { throw 'The dedicated Fire TV home icon is missing' }
 if (-not (Test-Path $gamesAsset)) { throw 'Embedded games list is missing' }
 if (-not (Test-Path $buildScript)) { throw 'Repeatable Android build script is missing' }
+if (-not (Test-Path $themeCatalogSource) -or -not (Test-Path $controllerSource) -or -not (Test-Path $endpointSource) -or -not (Test-Path $cloudEndpointSource) -or -not (Test-Path $cloudEndpointTest) -or -not (Test-Path $cloudClientSource) -or -not (Test-Path $cloudSyncSource) -or -not (Test-Path $appEntrySource) -or -not (Test-Path $appSource) -or -not (Test-Path $settingsNavigationSource)) { throw 'Theme, controller, endpoint, Android app and settings navigation sources are missing' }
 & pwsh -NoProfile -File $catalogTest
 if ($LASTEXITCODE -ne 0) { throw 'Catalog store contract failed' }
 $buildScriptText = Get-Content $buildScript -Raw
+if ($buildScriptText -notmatch 'CloudDeviceClient\.java') { throw 'APK build is missing the per-device Cloudflare API client' }
+if ($buildScriptText -notmatch 'CloudOrigin' -or $buildScriptText -notmatch 'FIRERETRO_CLOUD_ORIGIN') { throw 'APK build must inject a fixed Cloudflare Worker origin explicitly' }
+if ($buildScriptText -notmatch 'CloudLibrarySync\.java') { throw 'APK build is missing the private Cloudflare library synchronizer' }
+$cloudSyncText = Get-Content $cloudSyncSource -Raw
+foreach ($required in @('sha256', 'renameTo', 'reserveBytes', 'downloadTicket', 'writeApps', '.part', 'r2.cloudflarestorage.com')) { if ($cloudSyncText -notmatch [regex]::Escape($required)) { throw "Cloud library sync safety check is missing $required" } }
+foreach ($required in @('writeThemes','themeProfile','assignedThemeId')) { if ($cloudSyncText -notmatch [regex]::Escape($required)) { throw "Cloud theme sync is missing $required" } }
+foreach ($required in @('publishRemoteCard','installItem','remoteAvailable')) { if ($cloudSyncText -notmatch [regex]::Escape($required)) { throw "On-demand cloud library is missing $required" } }
+if ($cloudSyncText -match 'for \(int i = 0; i < pending\.size\(\)') { throw 'A catalog sync must not automatically download every remote ROM' }
+$installerSource = Get-Content (Join-Path (Split-Path $activity -Parent) 'AndroidAppInstaller.java') -Raw
+foreach ($required in @('GET_SIGNING_CERTIFICATES','expectedPackage','SHA-256','installedSignerMatches','archiveVersionCode')) { if ($installerSource -notmatch [regex]::Escape($required)) { throw "Private APK verification is missing $required" } }
 foreach ($required in @('aapt2.exe', 'd8.bat', 'zipalign.exe', 'apksigner.bat')) {
     if ($buildScriptText -notmatch [regex]::Escape($required)) { throw "Build script is missing $required" }
 }
+if ($buildScriptText -notmatch 'classes\.args' -or $buildScriptText -notmatch '@\$classList') { throw 'Build script must use a D8 argument file on Windows' }
 if ($buildScriptText -notmatch 'FIRERETRO_KEYSTORE' -or $buildScriptText -match 'keystore\\fireretro\.keystore') { throw 'Build script must use an external signing keystore' }
 if ($buildScriptText -notmatch [regex]::Escape('ThemeState.java')) { throw 'Build script is missing the carousel state source' }
 $javaRoot = 'C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2024.1.4\jbr'
 $testBuild = Join-Path $PSScriptRoot '.build'
 New-Item -ItemType Directory -Force -Path $testBuild | Out-Null
-& (Join-Path $javaRoot 'bin\javac.exe') -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest
+& (Join-Path $javaRoot 'bin\javac.exe') -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior did not compile' }
 & (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.LauncherStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior failed' }
 & (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ThemeStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Theme state behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ThemeCatalogTest
+if ($LASTEXITCODE -ne 0) { throw 'Theme catalog behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerStateTest
+if ($LASTEXITCODE -ne 0) { throw 'Controller state behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.RemoteLibraryEndpointTest
+if ($LASTEXITCODE -ne 0) { throw 'Remote library endpoint behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.CloudApiEndpointTest
+if ($LASTEXITCODE -ne 0) { throw 'Cloud API endpoint validation failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.AndroidAppEntryTest
+if ($LASTEXITCODE -ne 0) { throw 'Android app entry behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.AndroidAppSourceTest
+if ($LASTEXITCODE -ne 0) { throw 'Android app source behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.SettingsNavigationTest
+if ($LASTEXITCODE -ne 0) { throw 'Settings navigation behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.TvNavigationStateTest
+if ($LASTEXITCODE -ne 0) { throw 'TV navigation state behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerInputRouterTest
+if ($LASTEXITCODE -ne 0) { throw 'Controller input routing behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.TvFocusCoordinatorTest
+if ($LASTEXITCODE -ne 0) { throw 'TV focus coordination behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.DeviceStateThrottleTest
+if ($LASTEXITCODE -ne 0) { throw 'Device state throttling behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.SafeAreaProfileTest
+if ($LASTEXITCODE -ne 0) { throw 'Safe-area behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.LibraryUiStateTest
+if ($LASTEXITCODE -ne 0) { throw 'Library UI state behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ThemeProfileTest
+if ($LASTEXITCODE -ne 0) { throw 'Theme profile behavior failed' }
 $manifestText = Get-Content $manifest -Raw
 if ($manifestText -notmatch 'android\.intent\.category\.LEANBACK_LAUNCHER') { throw 'TV launcher category is missing' }
 if ($manifestText -notmatch 'android:label="Jogos Retro"') { throw 'The Fire TV app name must be Jogos Retro' }
 if ($manifestText -notmatch 'android:banner="@drawable/jogos_retro_banner"') { throw 'The Fire TV banner must use the widescreen artwork' }
 if ($manifestText -notmatch 'android:icon="@drawable/fireretro_home_icon_v2"') { throw 'The Fire TV home icon must use the dedicated square artwork' }
-if ($manifestText -notmatch 'android:versionCode="20260916"') { throw 'The Fire TV package must bump versionCode for the refreshed launcher component' }
+if ($manifestText -notmatch 'android:versionCode="20260936"') { throw 'The Fire TV package must bump versionCode for on-demand cloud downloads' }
+if ($manifestText -notmatch 'android.permission.REQUEST_INSTALL_PACKAGES') { throw 'APK installation permission is missing' }
 if ($manifestText -notmatch 'android:name="android.software.leanback" android:required="true"') { throw 'The Fire TV app must request the Leanback launcher tile' }
 if ($manifestText -notmatch '<activity[^>]*android:banner="@drawable/jogos_retro_banner"') { throw 'The Leanback activity must expose the widescreen artwork' }
 if ($manifestText -notmatch '<activity[^>]*android:icon="@drawable/fireretro_home_icon_v2"') { throw 'The Leanback activity must expose the dedicated home icon' }
 if ($manifestText -notmatch '<activity-alias[^>]*android:name="\.FireTvHome"') { throw 'The Fire TV launcher alias is missing' }
 if ($manifestText -notmatch '<activity-alias[^>]*android:banner="@drawable/jogos_retro_banner"') { throw 'The Fire TV launcher alias must expose the widescreen banner' }
 $source = Get-Content $activity -Raw
+foreach ($required in @('showSettingsScreen', 'populateControlsScreen', 'populateAppearanceScreen', 'populateLibraryScreen')) {
+    if ($source -notmatch [regex]::Escape($required)) { throw "Launcher source is missing full settings screen: $required" }
+}
 foreach ($required in @('com.retroarch.ra32','content_favorites.lpl','RetroActivityFuture','LIBRETRO')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Launcher source is missing $required" }
 }
 foreach ($required in @('CONFIGFILE','/sdcard/Android/data/com.retroarch.ra32/files/retroarch.cfg')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Launcher source is missing RetroArch configuration handoff: $required" }
 }
-foreach ($required in @('GradientDrawable','PERSONALIZAR')) {
+foreach ($required in @('GradientDrawable','createGalleryNavigation','showAppearanceTextEditor')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Visual layout is missing $required" }
 }
 foreach ($required in @('getAssets','LinearLayout.LayoutParams(0')) {
@@ -63,6 +138,8 @@ foreach ($required in @('getAssets','LinearLayout.LayoutParams(0')) {
 foreach ($required in @('platform','image','setAlpha','ImageView','FrameLayout','Section','FIT_CENTER','0xEE')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Launcher source is missing $required" }
 }
+if ($source -notmatch 'panel\.setPadding\(scaled\(18\), scaled\(16\), scaled\(18\), scaled\(16\)\)') { throw 'Game sections need enough inner padding to keep borders and labels visible' }
+if ($source -notmatch 'card\.setPadding\(scaled\(12\), scaled\(10\), scaled\(12\), scaled\(10\)\)') { throw 'Game cards need safe padding around cover and information' }
 if ($source -notmatch 'createMissingCover') { throw 'Games without cover artwork need a readable fallback card' }
 if ($source -notmatch 'cover\.setScaleType\(ImageView\.ScaleType\.FIT_CENTER\)') { throw 'Game cards must show full cover art without cropping' }
 if ($source -match 'cover\.setScaleType\(ImageView\.ScaleType\.CENTER_CROP\)') { throw 'Game cards may not crop cover art' }
@@ -121,12 +198,27 @@ if ($source -match 'Jogos do usuário') { throw 'Header title text should be hid
 foreach ($required in @('setOnKeyListener','KEYCODE_BACK','scrollTo')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Home navigation is missing $required" }
 }
-foreach ($required in @('ThemeState','scheduleCarousel','KEYCODE_DPAD_LEFT','KEYCODE_DPAD_RIGHT','BUSCAR JOGO','SLIDE')) {
-    if ($source -notmatch [regex]::Escape($required)) { throw "Carousel navigation is missing $required" }
+foreach ($required in @('ThemeState','createGalleryNavigation','showAppearanceTextEditor','editorKey','BUSCAR JOGO','APARÊNCIA','applySelectedTheme','ensureControllerProfile','Atalhos do RetroArch corrigidos','copyFile')) {
+    if ($source -notmatch [regex]::Escape($required)) { throw "TV navigation is missing $required" }
 }
-foreach ($required in @('A  ABRIR','B  VOLTAR','MENU  PERSONALIZAR','screenHeight')) {
+if ($source -match 'searchView\s*=\s*new\s+EditText') { throw 'Game search must not invoke the Fire OS keyboard' }
+foreach ($required in @('showSearchEditor','Aplicar busca','showControllerTestScreen','onGenericMotion','showManualMappingGuide','showControllerProfilesDashboard','showRemoteSettings','CloudDeviceClient','CloudLibrarySync','beginCloudPairing','PAREAR ESTA TV','saveCloudDeviceToken','applyCloudThemeAssignment','renderAndroidGames','verifyPrivateApk','installLauncherUpdate','launcher-update.json','createAppearanceControls','themeArtwork','generatedThemeArtwork','CONTRASTE','CAPAS','COR','FAVORITOS','toggleFavorite','platformFilterView','fireretro-backup-','backFromEditor','searchEditorOpen','remoteSettingsOpen','appearanceTextEditorOpen','controllerTestOpen','setNextFocusDownId(searchView.getId())','appearanceButtonView.setNextFocusDownId(searchView.getId())','KEYCODE_BUTTON_A','KEYCODE_BUTTON_R1','KEYCODE_BUTTON_R2','R1  Próxima aba','R2  Aba anterior')) {
+    if ($source -notmatch [regex]::Escape($required)) { throw "Missing verified controller/search flow: $required" }
+}
+if ($source -match 'remoteStatusView\.getText\(\)\.toString\(\)\.startsWith\("BIBLIOTECA PRIVADA: verificando"\)') { throw 'A successful library sync must clear a previous transient error' }
+foreach ($required in @('TvNavigationState','SafeAreaProfile','LibraryUiState','ThemeProfile','StoragePaths','createSidebar','createCompactTopBar','safeAreaProfile.horizontalInset','KEYCODE_BUTTON_L1','KEYCODE_BUTTON_L2','KEYCODE_BUTTON_START','showQuickActions','setNextFocusLeftId')) { if ($source -notmatch [regex]::Escape($required)) { throw "TV shell redesign is missing $required" } }
+if ((Get-Content (Join-Path (Split-Path $activity -Parent) 'ControllerProfile.java') -Raw) -notmatch 'mergeSafeSettings') { throw 'RetroArch safe profile merge is missing' }
+foreach ($required in @('AndroidAppInstaller','verifyPrivateApk','private-apk','externalAppsChanged','APPS','BAIXANDO APP')) { if ($source -notmatch [regex]::Escape($required)) { throw "Android app integration is missing $required" } }
+if ($manifestText -notmatch 'InstallStatusReceiver') { throw 'APK install status receiver is missing' }
+if ($manifestText -notmatch 'android.permission.ACCESS_NETWORK_STATE') { throw 'Connectivity status must be permission-aware' }
+foreach ($required in @('A  Selecionar','B  Voltar','createArcadeFooter','screenHeight')) {
     if ($source -notmatch [regex]::Escape($required)) { throw "Controller shortcut strip is missing $required" }
 }
+$buildScreenMatch = [regex]::Match($source, 'private void buildScreen\(\)\s*\{(?<body>[\s\S]*?)\n\s*private LinearLayout createCompactTopBar')
+if (-not $buildScreenMatch.Success) { throw 'Could not inspect buildScreen' }
+if ($buildScreenMatch.Groups['body'].Value -match 'startRemoteSync\(\)') { throw 'Rebuilding the TV screen must not start another cloud synchronization' }
+if ($source -notmatch 'postDelayed\(periodicCloudSync, 30L \* 60L \* 1000L\)') { throw 'Periodic cloud synchronization must start after the configured 30 minute interval' }
+foreach ($required in @('ControllerInputRouter','TvFocusCoordinator')) { if ($source -notmatch [regex]::Escape($required)) { throw "Controller navigation is missing $required" } }
 $profile = Join-Path (Split-Path $root -Parent) 'examples\controller-profile.example.cfg'
 if (-not (Test-Path $profile)) { throw 'Xbox controller profile is missing' }
 if ((Get-Content $profile -Raw) -notmatch 'input_analog_dpad_mode\s*=\s*"3"') { throw 'Xbox analog-to-dpad mapping is missing' }

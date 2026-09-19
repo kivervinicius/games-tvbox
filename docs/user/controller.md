@@ -2,7 +2,9 @@
 
 ## Mapeamento
 
-O launcher recebe comandos de controle pelo foco padrão do Android TV. As setas navegam, A abre o item, B volta e Menu mostra a orientação de personalização.
+A aba **Controles** lista os dispositivos reconhecidos pelo Fire OS, mostra conexão, perfil aplicado e resultado do teste. O app reaplica os padrões de navegação, analógicos e saída do RetroArch quando identifica que foram perdidos, sempre mantendo um backup.
+
+Abra **Controles** pelo indicador no topo para conferir cada dispositivo. Teste os botões e analógicos antes de iniciar um jogo. O launcher recebe comandos pelo foco padrão do Android TV: as setas navegam, A abre, B volta e Menu abre Aparência.
 
 No RetroArch, abra `Settings > Input > RetroPad Binds > Port 1 Controls`, escolha `Set All Controls`, pressione cada botão e salve o perfil. O modo analógico para direcional fica no exemplo `examples/controller-profile.example.cfg`.
 

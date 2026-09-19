@@ -77,3 +77,43 @@ test('admin status lists upload reservations only once', async () => {
   assert.equal(response.status, 200);
   assert.equal(env.RESERVATION_KV.listCalls, 1);
 });
+
+test('reserveUpload assigns canonical contentId sha256 and structured R2 blob key', async () => {
+  const env = bindings(null);
+  const sha = 'e'.repeat(64);
+  const res = await adminApi(post('/api/admin/uploads', { filename: 'sonic.bin', size: 1024, sha256: sha, kind: 'rom' }), env);
+  assert.equal(res.status, 201);
+  const data = await res.json();
+  assert.equal(data.contentId, `sha256:${sha}`);
+  const stored = await env.RESERVATION_KV.get(`upload:${data.uploadId}`, 'json');
+  assert.equal(stored.objectKey, `blobs/sha256/ee/${sha}`);
+});
+
+test('ROM publication is idempotent when republishing same content or path', async () => {
+  const env = bindings(null);
+  const uploadId1 = '44444444-4444-4444-8444-444444444444';
+  const sha = 'f'.repeat(64);
+  await env.RESERVATION_KV.put(`upload:${uploadId1}`, JSON.stringify({
+    id: uploadId1, filename: 'mario.sfc', size: 2048, sha256: sha,
+    contentId: `sha256:${sha}`, objectKey: `blobs/sha256/ff/${sha}`, status: 'verified'
+  }));
+  const item1 = { kind: 'rom', category: 'game', label: 'Super Mario World v1', localPath: '/sdcard/roms/snes/smw.sfc', corePath: '/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so' };
+  const res1 = await adminApi(post('/api/admin/publications', { uploads: [{ uploadId: uploadId1, item: item1 }] }), env);
+  assert.equal((await res1.json()).itemCount, 1);
+
+  // Second upload of same content with updated label
+  const uploadId2 = '55555555-5555-4555-8555-555555555555';
+  await env.RESERVATION_KV.put(`upload:${uploadId2}`, JSON.stringify({
+    id: uploadId2, filename: 'mario.sfc', size: 2048, sha256: sha,
+    contentId: `sha256:${sha}`, objectKey: `blobs/sha256/ff/${sha}`, status: 'verified'
+  }));
+  const item2 = { kind: 'rom', category: 'game', label: 'Super Mario World v2', localPath: '/sdcard/roms/snes/smw.sfc', corePath: '/data/user/0/com.retroarch.ra32/cores/snes9x_libretro_android.so' };
+  const res2 = await adminApi(post('/api/admin/publications', { uploads: [{ uploadId: uploadId2, item: item2 }] }), env);
+  const result2 = await res2.json();
+  assert.equal(result2.itemCount, 1); // Idempotent: Did NOT create duplicate card!
+  const catalog = await env.CATALOG_KV.get('catalog:active', 'json');
+  assert.equal(catalog.items.length, 1);
+  assert.equal(catalog.items[0].label, 'Super Mario World v2');
+  assert.equal(catalog.items[0].contentId, `sha256:${sha}`);
+});
+

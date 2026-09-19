@@ -3,6 +3,8 @@ import { adminApi } from './admin-api.mjs';
 import { routeAdminPairings, routeDeviceApi } from './device-api.mjs';
 import { routeImporterApi } from './importer-api.mjs';
 import { ApiError, errorResponse, jsonResponse } from './errors.mjs';
+export { LibraryCoordinator } from './coordinator.mjs';
+
 
 export default {
   async fetch(request, env, ctx) {

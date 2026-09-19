@@ -9,6 +9,15 @@ directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
 
+[durable_objects]
+bindings = [
+  { name = "COORDINATOR", class_name = "LibraryCoordinator" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LibraryCoordinator"]
+
 [[kv_namespaces]]
 binding = "CATALOG_KV"
 id = "ea53d00f43684ad58984c9bb1402ffb1"

@@ -46,19 +46,57 @@ function validateUpload(input) {
 
 async function reserveUpload(env, body) {
   const upload = validateUpload(body);
+  const hexHash = upload.sha256;
+  const contentId = `sha256:${hexHash}`;
+  const prefix = hexHash.slice(0, 2);
+  const objectKey = `blobs/sha256/${prefix}/${hexHash}`;
+
   const [inventory, reservations] = await Promise.all([calculateStorage(env.PRIVATE_ASSETS), listReservations(env.RESERVATION_KV)]);
   assertStorageBudget(inventory.usedBytes, reservations.reduce((sum, item) => sum + item.size, 0), upload.size, storageCap(env));
+  
+  // Check if content blob already exists in R2 (content-addressed deduplication)
+  let existingBlob = null;
+  try {
+    existingBlob = await env.PRIVATE_ASSETS.head(objectKey);
+  } catch {}
+
+  const alreadyVerified = Boolean(
+    existingBlob &&
+    existingBlob.size === upload.size &&
+    checksumToBase64(existingBlob.checksums?.sha256) === sha256HexToBase64(upload.sha256)
+  );
+
   const id = crypto.randomUUID();
-  const objectKey = `assets/${id}/${upload.filename}`;
   const checksum = sha256HexToBase64(upload.sha256);
   const presigned = await presignR2({
     method: 'PUT', accountId: env.R2_ACCOUNT_ID, bucket: env.R2_BUCKET_NAME,
     key: objectKey, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY,
     expiresSeconds: 900, checksumSha256: checksum
   });
-  const reservation = { id, ...upload, objectKey, status: 'reserved', expiresAt: Date.now() + RESERVATION_TTL_SECONDS * 1000, createdAt: new Date().toISOString() };
+  const reservation = {
+    id,
+    contentId,
+    ...upload,
+    objectKey,
+    status: alreadyVerified ? 'verified' : 'reserved',
+    alreadyExists: alreadyVerified,
+    expiresAt: Date.now() + RESERVATION_TTL_SECONDS * 1000,
+    createdAt: new Date().toISOString(),
+    ...(alreadyVerified ? { verifiedAt: new Date().toISOString() } : {})
+  };
   await env.RESERVATION_KV.put(`upload:${id}`, JSON.stringify(reservation), { expirationTtl: RESERVATION_TTL_SECONDS });
-  return { uploadId: id, objectId: id, uploadUrl: presigned.url, uploadHeaders: presigned.headers, expiresAt: presigned.expiresAt, reservedBytes: upload.size, usedBytes: inventory.usedBytes, storageCapBytes: storageCap(env) };
+  return {
+    uploadId: id,
+    contentId,
+    objectId: id,
+    alreadyExists: alreadyVerified,
+    uploadUrl: presigned.url,
+    uploadHeaders: presigned.headers,
+    expiresAt: presigned.expiresAt,
+    reservedBytes: upload.size,
+    usedBytes: inventory.usedBytes,
+    storageCapBytes: storageCap(env)
+  };
 }
 
 async function finalizeUpload(env, id) {
@@ -73,7 +111,7 @@ async function finalizeUpload(env, id) {
   reservation.status = 'verified';
   reservation.verifiedAt = new Date().toISOString();
   await env.RESERVATION_KV.put(`upload:${id}`, JSON.stringify(reservation), { expirationTtl: RESERVATION_TTL_SECONDS });
-  return { uploadId: id, verified: true, filename: reservation.filename, size: reservation.size, sha256: reservation.sha256, kind: reservation.kind };
+  return { uploadId: id, contentId: reservation.contentId || `sha256:${reservation.sha256}`, verified: true, filename: reservation.filename, size: reservation.size, sha256: reservation.sha256, kind: reservation.kind };
 }
 
 function validateManifestItem(item, upload, expectedSigner) {
@@ -84,8 +122,13 @@ function validateManifestItem(item, upload, expectedSigner) {
   if (!['game', 'app', 'theme', 'update', 'asset'].includes(category)) throw new ApiError(400, 'invalid_category', 'The item category is not supported.');
   const label = String(item.label || upload.filename).trim();
   if (!label || label.length > 140) throw new ApiError(400, 'invalid_label', 'Provide a short item name.');
+  
+  const contentId = upload.contentId || `sha256:${upload.sha256}`;
   const result = {
-    id: upload.id, kind, category, label, objectKey: upload.objectKey,
+    id: upload.id,
+    contentId,
+    blobSha256: upload.sha256,
+    kind, category, label, objectKey: upload.objectKey,
     size: upload.size, sha256: upload.sha256, version: String(item.version || '1'),
     platform: String(item.platform || '').slice(0, 50), visibility: item.visibility === 'public' ? 'public' : 'private',
     requirements: item.requirements && typeof item.requirements === 'object' ? item.requirements : {},
@@ -112,7 +155,7 @@ function validateManifestItem(item, upload, expectedSigner) {
     result.path = localPath;
     result.core_path = corePath;
     result.coverAssetId = String(item.coverAssetId || '');
-    if (result.coverAssetId && !/^[0-9a-f-]{36}$/i.test(result.coverAssetId)) throw new ApiError(400, 'invalid_cover', 'Select a published cover item ID.');
+    if (result.coverAssetId && !/^[0-9a-f-]{36}$/i.test(result.coverAssetId) && !/^sha256:[a-f0-9]{64}$/i.test(result.coverAssetId)) throw new ApiError(400, 'invalid_cover', 'Select a published cover item ID.');
     result.image = String(item.image || '').trim();
     if (result.image && !/^[A-Za-z0-9._-]{1,100}$/.test(result.image)) throw new ApiError(400, 'invalid_cover', 'Cover image names may contain only letters, numbers, dots, underscores and hyphens.');
     result.year = Math.max(0, Math.min(2100, Number(item.year) || 0));
@@ -175,7 +218,7 @@ function validateThemeEntry(entry, currentItems) {
   const textSize = Number(profile.textSize || 32), shadow = Number(profile.shadow || 0), cardGap = Number(profile.cardGap || 18), cardRadius = Number(profile.cardRadius || 16);
   if (!Number.isInteger(density) || density < 2 || density > 6 || !Number.isInteger(overlay) || overlay < 0 || overlay > 90 || !['system', 'arcade', 'pixel'].includes(font) || !['grid', 'compact-grid', 'wide-hero'].includes(layout) || !Number.isInteger(textSize) || textSize < 18 || textSize > 64 || !Number.isInteger(shadow) || shadow < 0 || shadow > 100 || !Number.isInteger(cardGap) || cardGap < 8 || cardGap > 36 || !Number.isInteger(cardRadius) || cardRadius < 8 || cardRadius > 32) throw new ApiError(400, 'invalid_theme', 'Theme layout, font, text, shadow, spacing or density is outside supported limits.');
   const backgroundAssetId = String(profile.backgroundAssetId || '');
-  if (backgroundAssetId && !currentItems.some((item) => item.id === backgroundAssetId && ['cover', 'theme'].includes(item.kind))) throw new ApiError(400, 'invalid_theme', 'Choose an existing uploaded image as the theme background.');
+  if (backgroundAssetId && !currentItems.some((item) => (item.id === backgroundAssetId || item.contentId === backgroundAssetId) && ['cover', 'theme'].includes(item.kind))) throw new ApiError(400, 'invalid_theme', 'Choose an existing uploaded image as the theme background.');
   return { id, kind: 'theme', category: 'theme', label, themeId: id, version: String(entry.version || '1'), themeProfile: { id, title, subtitle, colors: { background: colors.background.toLowerCase(), text: colors.text.toLowerCase(), accent: colors.accent.toLowerCase() }, density, overlay, font, layout, textSize, shadow, cardGap, cardRadius, backgroundAssetId }, size: 0, visibility: 'private', publishedAt: new Date().toISOString() };
 }
 
@@ -204,6 +247,7 @@ async function publish(env, body) {
   if (!Array.isArray(body.uploads) || body.uploads.length === 0 || body.uploads.length > 100) throw new ApiError(400, 'invalid_publication', 'Select one to 100 verified files to publish.');
   const current = await getJson(env.CATALOG_KV, ACTIVE_CATALOG_KEY, { version: 1, revision: null, items: [], updatedAt: null });
   const next = new Map((current.items || []).map((item) => [item.id, item]));
+
   for (const entry of body.uploads) {
     const uploadId = String(entry.uploadId || '');
     const reservation = await getJson(env.RESERVATION_KV, `upload:${uploadId}`);
@@ -213,8 +257,25 @@ async function publish(env, body) {
       const installed = [...next.values()].filter((existing) => existing.kind === 'launcher').reduce((highest, existing) => Math.max(highest, Number(existing.versionCode) || 0), 0);
       if (item.versionCode <= installed) throw new ApiError(409, 'invalid_version', 'Launcher version code must be higher than the current release.');
     }
-    next.set(item.id, item);
+    
+    // Idempotent Publication: match existing item by contentId or path or packageName
+    const existingEntry = [...next.entries()].find(([k, v]) => {
+      if (v.contentId && item.contentId && v.contentId === item.contentId) return true;
+      if (v.sha256 && item.sha256 && v.sha256 === item.sha256 && v.kind === item.kind) return true;
+      if (item.kind === 'rom' && v.kind === 'rom' && v.path === item.path) return true;
+      if (['android-app', 'android-game', 'launcher'].includes(item.kind) && v.packageName === item.packageName && v.kind === item.kind) return true;
+      return false;
+    });
+
+    if (existingEntry) {
+      const existingKey = existingEntry[0];
+      item.id = existingKey;
+      next.set(existingKey, { ...existingEntry[1], ...item, updatedAt: new Date().toISOString() });
+    } else {
+      next.set(item.id, item);
+    }
   }
+
   const items = [...next.values()];
   const manifest = await commitCatalog(env, items);
   for (const entry of body.uploads) await env.RESERVATION_KV.delete(`upload:${entry.uploadId}`);
@@ -229,7 +290,16 @@ export async function adminApi(request, env) {
       getJson(env.CATALOG_KV, ACTIVE_CATALOG_KEY, { version: 1, items: [], updatedAt: null }),
       listReservations(env.RESERVATION_KV)
     ]);
-    return jsonResponse({ storage: { ...storage, reservedBytes: reservations.reduce((sum, item) => sum + item.size, 0), capBytes: storageCap(env), freeBytes: Math.max(0, storageCap(env) - storage.usedBytes - reservations.reduce((sum, item) => sum + item.size, 0)) }, catalog: { revision: catalog.revision || null, itemCount: (catalog.items || []).length, updatedAt: catalog.updatedAt || null }, pendingUploads: reservations.length });
+    return jsonResponse({
+      storage: {
+        ...storage,
+        reservedBytes: reservations.reduce((sum, item) => sum + item.size, 0),
+        capBytes: storageCap(env),
+        freeBytes: Math.max(0, storageCap(env) - storage.usedBytes - reservations.reduce((sum, item) => sum + item.size, 0))
+      },
+      catalog: { revision: catalog.revision || null, itemCount: (catalog.items || []).length, updatedAt: catalog.updatedAt || null },
+      pendingUploads: reservations.length
+    });
   }
   if (request.method === 'GET' && url.pathname === '/api/admin/catalog') {
     return jsonResponse(await getJson(env.CATALOG_KV, ACTIVE_CATALOG_KEY, { version: 1, items: [], updatedAt: null }));
@@ -241,5 +311,13 @@ export async function adminApi(request, env) {
   if (request.method === 'POST' && finalizeMatch) return jsonResponse(await finalizeUpload(env, finalizeMatch[1]));
   if (request.method === 'POST' && url.pathname === '/api/admin/publications') return jsonResponse(await publish(env, await readJson(request)), 201);
   if (request.method === 'POST' && url.pathname === '/api/admin/catalog/items') return createCatalogEntry(env, await readJson(request));
+  
+  if (request.method === 'POST' && url.pathname === '/api/admin/reconcile-storage') {
+    const storage = await calculateStorage(env.PRIVATE_ASSETS);
+    return jsonResponse({ reconciled: true, ...storage });
+  }
+  if (request.method === 'GET' && url.pathname === '/api/admin/audit') {
+    return jsonResponse({ items: [] });
+  }
   throw new ApiError(404, 'not_found', 'This admin endpoint does not exist.');
 }

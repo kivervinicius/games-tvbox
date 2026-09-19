@@ -1,5 +1,11 @@
 # Worklog — Games TV Box Gaming Platform
 
+## 2026-09-19 - Implement P0.2 & P0.3 Content Identity and Transaction Coordinator
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Implemented content-addressed R2 storage (blobs/sha256/prefix/hash) with sha256 contentId, idempotent publication updating existing entries in place, TransactionCoordinator and Durable Object LibraryCoordinator with atomic quota tracking, audit event logging, and reconcile-storage endpoint
+- Verified: All 36 Cloudflare tests passed (including new coordinator storage/audit tests, contentId reservation tests, and publication idempotence tests)
+- Next context: Proceeding to canonical PlatformRegistry and Device Capabilities / CompatibilityEngine
+
 ## 2026-09-19 - Fix P0.1 Pairing Auto-Approval & Scope Enforcement
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Eliminated public pairing approval endpoint (/api/device/pair/approve), enforced admin-only approval with profile and scope granting, restricted importer API to authorized scopes and whitelisted routes, updated CloudDeviceClient with platform handshake

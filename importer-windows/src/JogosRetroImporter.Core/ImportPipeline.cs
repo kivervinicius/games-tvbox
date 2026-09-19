@@ -20,16 +20,36 @@ public sealed class ImportPipeline
         var sourceRoot = Path.Combine(work, "source"); Directory.CreateDirectory(sourceRoot);
         IReadOnlyList<string> inputs;
         if (new[] { ".7z", ".zip" }.Contains(original.Extension.ToLowerInvariant())) { status?.Report("Extraindo arquivo sem alterar o original…"); inputs = await ArchiveExtractor.ExtractAsync(original.FullName, sourceRoot, null, cancellationToken); }
+        else if (original.Extension.Equals(".cue", StringComparison.OrdinalIgnoreCase))
+        {
+            var sheet = CueSheet.Load(original.FullName);
+            var copy = Path.Combine(sourceRoot, original.Name);
+            File.Copy(original.FullName, copy);
+            foreach (var track in sheet.ReferencedFiles)
+                File.Copy(track, Path.Combine(sourceRoot, Path.GetFileName(track)));
+            inputs = Directory.GetFiles(sourceRoot);
+        }
+        else if (original.Extension.Equals(".bin", StringComparison.OrdinalIgnoreCase))
+        {
+            var siblingCue = Path.ChangeExtension(original.FullName, ".cue");
+            if (!File.Exists(siblingCue)) throw new InvalidDataException("O BIN precisa de um CUE com o mesmo nome para preservar as faixas.");
+            var sheet = CueSheet.Load(siblingCue);
+            File.Copy(siblingCue, Path.Combine(sourceRoot, Path.GetFileName(siblingCue)));
+            foreach (var track in sheet.ReferencedFiles)
+                File.Copy(track, Path.Combine(sourceRoot, Path.GetFileName(track)));
+            inputs = Directory.GetFiles(sourceRoot);
+        }
         else { var copy = Path.Combine(sourceRoot, original.Name); File.Copy(original.FullName, copy); inputs = [copy]; }
         var cue = inputs.FirstOrDefault(path => Path.GetExtension(path).Equals(".cue", StringComparison.OrdinalIgnoreCase));
         var chd = inputs.FirstOrDefault(path => Path.GetExtension(path).Equals(".chd", StringComparison.OrdinalIgnoreCase));
-        if (cue is null && chd is null) throw new InvalidDataException("Não foi encontrado CUE/BIN ou CHD de PlayStation.");
+        var iso = inputs.FirstOrDefault(path => Path.GetExtension(path).Equals(".iso", StringComparison.OrdinalIgnoreCase));
+        if (cue is null && chd is null && iso is null) throw new InvalidDataException("Não foi encontrado CUE/BIN, ISO ou CHD de PlayStation.");
         var metadata = await new LibretroMetadataClient().FetchAsync(original.Name, Path.Combine(work, "metadata"), cancellationToken);
         var final = Path.Combine(work, Sanitize(metadata.Title) + ".chd");
         if (chd is not null) File.Copy(chd, final);
-        else { status?.Report("Convertendo para CHD e verificando integridade…"); await new ChdmanRunner(chdman).ConvertAndVerifyAsync(cue!, final, status, cancellationToken); }
+        else { status?.Report("Convertendo para CHD e verificando integridade…"); await new ChdmanRunner(chdman).ConvertAndVerifyAsync(cue ?? iso!, final, status, cancellationToken); }
         if (originalHash != await FileHash.Sha256Async(original.FullName, cancellationToken)) throw new IOException("O arquivo original foi alterado durante a importação.");
-        return new PreparedGame(original.FullName, originalHash, work, cue ?? chd!, final, metadata);
+        return new PreparedGame(original.FullName, originalHash, work, cue ?? iso ?? chd!, final, metadata);
     }
 
     private static string Sanitize(string value) => string.Concat(value.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch)).Trim();

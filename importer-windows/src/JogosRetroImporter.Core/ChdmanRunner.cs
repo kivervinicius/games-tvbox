@@ -7,12 +7,13 @@ public sealed class ChdmanRunner
     private readonly string executable;
     public ChdmanRunner(string executable) => this.executable = executable;
 
-    public async Task ConvertAndVerifyAsync(string cuePath, string outputPath, IProgress<string>? log = null, CancellationToken cancellationToken = default)
+    public async Task ConvertAndVerifyAsync(string sourcePath, string outputPath, IProgress<string>? log = null, CancellationToken cancellationToken = default)
     {
-        CueSheet.Load(cuePath);
+        if (Path.GetExtension(sourcePath).Equals(".cue", StringComparison.OrdinalIgnoreCase)) CueSheet.Load(sourcePath);
+        else if (!Path.GetExtension(sourcePath).Equals(".iso", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("A origem do disco deve ser CUE ou ISO.");
         if (!File.Exists(executable)) throw new FileNotFoundException("chdman.exe não foi encontrado. Use Reparar ferramentas.", executable);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        await RunAsync(["createcd", "-i", cuePath, "-o", outputPath], log, cancellationToken);
+        await RunAsync(["createcd", "-i", sourcePath, "-o", outputPath], log, cancellationToken);
         await RunAsync(["verify", "-i", outputPath], log, cancellationToken);
         if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0) throw new InvalidDataException("A conversão não gerou um CHD válido.");
     }

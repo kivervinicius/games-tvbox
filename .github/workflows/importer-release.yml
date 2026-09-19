@@ -59,11 +59,15 @@ jobs:
           name: chdman-win-x64
           path: importer-windows/release-tool
       - name: Test
-        run: dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj --configfile importer-windows/NuGet.Config
+        shell: pwsh
+        run: |
+          dotnet restore importer-windows/JogosRetroImporter.sln --configfile importer-windows/NuGet.config
+          dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj -c Release --no-restore
       - name: Publish self-contained importer
         shell: pwsh
         run: |
-          dotnet publish importer-windows/src/JogosRetroImporter/JogosRetroImporter.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o importer-windows/artifacts/publish --configfile importer-windows/NuGet.Config
+          dotnet restore importer-windows/src/JogosRetroImporter/JogosRetroImporter.csproj -r win-x64 --configfile importer-windows/NuGet.config
+          dotnet publish importer-windows/src/JogosRetroImporter/JogosRetroImporter.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o importer-windows/artifacts/publish --no-restore
           New-Item -ItemType Directory -Force importer-windows/artifacts/publish/tools | Out-Null
           Copy-Item importer-windows/release-tool/chdman.exe importer-windows/artifacts/publish/tools/chdman.exe
           Copy-Item importer-windows/release-tool/toolchain.lock.json importer-windows/artifacts/publish/tools/toolchain.lock.json -Force

@@ -80,6 +80,18 @@ $analogInputFilterTest = Join-Path $PSScriptRoot 'AnalogInputFilterTest.java'
 $appManagedStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\AppManagedStorageStrategy.java'
 $appManagedStorageTest = Join-Path $PSScriptRoot 'AppManagedStorageTest.java'
 $inputManagerExtendedTest = Join-Path $PSScriptRoot 'InputManagerExtendedTest.java'
+$safLocationSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\SafLocation.java'
+$safLocationTest = Join-Path $PSScriptRoot 'SafLocationTest.java'
+$downloadStateMachineSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\DownloadStateMachine.java'
+$downloadStateMachineTest = Join-Path $PSScriptRoot 'DownloadStateMachineTest.java'
+$accessibilityAnnouncerSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\AccessibilityAnnouncer.java'
+$accessibilityAnnouncerTest = Join-Path $PSScriptRoot 'AccessibilityAnnouncerTest.java'
+$favoriteIdentitySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\FavoriteIdentity.java'
+$favoriteIdentityTest = Join-Path $PSScriptRoot 'FavoriteIdentityTest.java'
+$windowSizeClassSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\WindowSizeClass.java'
+$windowSizeClassTest = Join-Path $PSScriptRoot 'WindowSizeClassTest.java'
+$themeTokensSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeTokens.java'
+$themeTokensTest = Join-Path $PSScriptRoot 'ThemeTokensTest.java'
 $catalogTest = Join-Path $PSScriptRoot 'catalog-store.tests.ps1'
 $buildScript = Join-Path $root 'scripts\Build-FireRetro.ps1'
 if (-not (Test-Path $manifest)) { throw 'Manifest is missing' }
@@ -119,7 +131,7 @@ if ($IsWindows -and (Test-Path (Join-Path $javaRoot 'bin\javac.exe'))) {
 }
 $testBuild = Join-Path $PSScriptRoot '.build'
 New-Item -ItemType Directory -Force -Path $testBuild | Out-Null
-& $javacCmd -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCustomizationTest $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $gameActionSource $inputDeviceTypeSource $inputManagerSource $inputManagerTest $inputManagerExtendedTest $analogInputFilterSource $analogInputFilterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest $accessibleColorResolverSource $accessibleColorResolverTest $storageTypeSource $romStorageStrategySource $baseRomStorageStrategySource $appStorageStrategySource $appManagedStorageStrategySource $legacyExternalStorageStrategySource $removableStorageStrategySource $usbStorageStrategySource $storagePathsSource $romStorageResolverSource $romStorageTest $appManagedStorageTest $deviceTypeSource $deviceProfileSource $platformSource $experienceModeSource $deviceCapabilitiesSource $deviceProfileEngineSource $deviceProfileTest $deviceProfileEngineTest $emulatorProviderSource $retroArchCoreCatalogSource $retroArchProviderSource $retroArchProviderTest $retroArchCoreCatalogTest $gamerDashboardStateSource $gamerDashboardStateTest
+& $javacCmd -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCustomizationTest $themeTokensSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $gameActionSource $inputDeviceTypeSource $inputManagerSource $inputManagerTest $inputManagerExtendedTest $analogInputFilterSource $analogInputFilterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest $accessibleColorResolverSource $accessibleColorResolverTest $windowSizeClassSource $windowSizeClassTest $themeTokensSource $themeTokensTest $storageTypeSource $romStorageStrategySource $baseRomStorageStrategySource $appStorageStrategySource $appManagedStorageStrategySource $legacyExternalStorageStrategySource $removableStorageStrategySource $usbStorageStrategySource $storagePathsSource $romStorageResolverSource $romStorageTest $appManagedStorageTest $safLocationSource $safLocationTest $downloadStateMachineSource $downloadStateMachineTest $accessibilityAnnouncerSource $accessibilityAnnouncerTest $favoriteIdentitySource $favoriteIdentityTest $deviceTypeSource $deviceProfileSource $platformSource $experienceModeSource $deviceCapabilitiesSource $deviceProfileEngineSource $deviceProfileTest $deviceProfileEngineTest $emulatorProviderSource $retroArchCoreCatalogSource $retroArchProviderSource $retroArchProviderTest $retroArchCoreCatalogTest $gamerDashboardStateSource $gamerDashboardStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior did not compile' }
 & $javaCmd -cp $testBuild com.kiver.fireretro.LauncherStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior failed' }

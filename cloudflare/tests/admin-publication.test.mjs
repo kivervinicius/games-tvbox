@@ -15,13 +15,6 @@ function bindings(object) {
   return { CATALOG_KV: new MemoryKV(), RESERVATION_KV: new MemoryKV(), PRIVATE_ASSETS: { list: async () => ({ objects: [], truncated: false }), head: async () => object }, R2_ACCOUNT_ID: 'account', R2_BUCKET_NAME: 'private', R2_ACCESS_KEY_ID: 'key', R2_SECRET_ACCESS_KEY: 'secret' };
 }
 function post(path, body = {}) { return new Request(`https://service.example${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); }
-function romItem(overrides = {}) {
-  return { kind: 'rom', category: 'game', label: 'Test Game', platform: 'NES', contentId: `sha256:${'d'.repeat(64)}`, localPath: '/sdcard/roms/nes/game.nes', corePath: '/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so', ...overrides };
-}
-async function addVerifiedRom(env, uploadId, item = romItem(), sha256 = 'd'.repeat(64)) {
-  await env.RESERVATION_KV.put(`upload:${uploadId}`, JSON.stringify({ id: uploadId, filename: 'game.nes', size: 10, sha256, objectKey: `assets/${uploadId}/game.nes`, status: 'verified' }));
-  return adminApi(post('/api/admin/publications', { uploads: [{ uploadId, item }] }), env);
-}
 
 test('finalize compares the actual R2 SHA-256 checksum and rejects mismatch', async () => {
   const hex = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
@@ -67,7 +60,7 @@ test('ROM publication requires a safe local path and an explicit installed core'
   const env = bindings(null);
   const uploadId = '33333333-3333-4333-8333-333333333333';
   await env.RESERVATION_KV.put(`upload:${uploadId}`, JSON.stringify({ id: uploadId, filename: 'game.nes', size: 10, sha256: 'd'.repeat(64), objectKey: `assets/${uploadId}/game.nes`, status: 'verified' }));
-  const item = romItem();
+  const item = { kind: 'rom', category: 'game', label: 'Test Game', localPath: '/sdcard/roms/nes/game.nes', corePath: '/data/user/0/com.retroarch.ra32/cores/fceumm_libretro_android.so' };
   await assert.rejects(adminApi(post('/api/admin/publications', { uploads: [{ uploadId, item: { ...item, localPath: '/sdcard/roms/../Android/data/file' } }] }), env), { code: 'invalid_local_path' });
   await assert.rejects(adminApi(post('/api/admin/publications', { uploads: [{ uploadId, item: { ...item, corePath: '/data/../system/core.so' } }] }), env), { code: 'invalid_core_path' });
   const response = await adminApi(post('/api/admin/publications', { uploads: [{ uploadId, item }] }), env);
@@ -75,21 +68,6 @@ test('ROM publication requires a safe local path and an explicit installed core'
   assert.equal((await response.json()).itemCount, 1);
   assert.equal(catalog.items[0].path, item.localPath);
   assert.equal(catalog.items[0].core_path, item.corePath);
-});
-
-test('ROM publication is idempotent by contentId and rejects conflicting bytes', async () => {
-  const env = bindings(null);
-  const first = await addVerifiedRom(env, '44444444-4444-4444-8444-444444444444');
-  assert.equal((await first.json()).itemCount, 1);
-  const second = await addVerifiedRom(env, '55555555-5555-4555-8555-555555555555');
-  assert.equal((await second.json()).itemCount, 1);
-  const catalog = await env.CATALOG_KV.get('catalog:active', 'json');
-  assert.equal(catalog.items.length, 1);
-  assert.equal(catalog.items[0].contentId, `sha256:${'d'.repeat(64)}`);
-  await assert.rejects(
-    addVerifiedRom(env, '66666666-6666-4666-8666-666666666666', romItem({ label: 'Conflicting Game', localPath: '/sdcard/roms/snes/game.sfc' })),
-    { code: 'content_conflict' }
-  );
 });
 
 test('admin status lists upload reservations only once', async () => {

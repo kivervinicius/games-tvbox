@@ -2,14 +2,14 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified
+- Entry: Baseline Audit, Discovery, API v1 spec, and ADRs (ADR-R01..ADR-R08) for Retrostic Integration completed
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: docs/architecture/FIRE_TV_ACCEPTANCE.md, docs/architecture/ANDROID_GAMER_ACCEPTANCE.md, docs/architecture/COMPATIBILITY_MATRIX.md
-- Verified: 100% of test matrix passed (Cloudflare: 45/45, Android: 21/21, Importer .NET, PowerShell Manager)
-- Next context: Consolidating final report for Maestro
+- Changed: docs/retrostic/BASELINE.md, docs/retrostic/RETROSTIC_DISCOVERY.md, docs/retrostic/RETROSTIC_API_V1.md, docs/architecture/adr/ADR-R01..R08
+- Verified: DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
+- Next context: Migrating Importer Core to .NET 10 LTS and implementing cross-platform abstractions
 
 ## Latest Work
-Documentados formalmente os roteiros de teste e aceitação para Fire TV / Android TV (`FIRE_TV_ACCEPTANCE.md`) e para o modo Android Gamer Handheld (`ANDROID_GAMER_ACCEPTANCE.md`), além da consolidação da Matriz de Compatibilidade (`COMPATIBILITY_MATRIX.md`) contemplando os perfis homologados, estratégias de storage por versão do Android e mapeamento de emuladores e cores.
+Produzidos os documentos formais de baseline do importador (`BASELINE.md`), análise de tráfego/CDN/Cloudflare e estratégia de aquisição do Retrostic (`RETROSTIC_DISCOVERY.md`), especificação REST da API oficial (`RETROSTIC_API_V1.md`) e os 8 ADRs (`ADR-R01` a `ADR-R08`) definindo a arquitetura de provider desacoplado, resolução multinível, download manager resiliente, migração .NET 10 cross-platform, identidades criptográficas canônicas, ingestão multi-plataforma e publicação atômica.
 
 ## Recent Entries
 - 2026-09-19: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified.

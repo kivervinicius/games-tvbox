@@ -2,7 +2,7 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: Acceptance scenarios documentation, full test matrix validation (Cloudflare, Android, Importer, PowerShell)
+- Scope: Retrostic Baseline Audit, Discovery documentation, API v1 specification, and ADR-R01..ADR-R08
 
 ## Commands
 - `node --test cloudflare/tests/*.test.mjs`

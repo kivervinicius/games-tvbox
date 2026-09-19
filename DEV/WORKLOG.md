@@ -1,5 +1,11 @@
 # Worklog — Games TV Box Gaming Platform
 
+## 2026-09-19 - Baseline Audit and Architectural ADRs for Retrostic Integration
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Produced `docs/retrostic/BASELINE.md` (audit of current importer locks and dependencies), `docs/retrostic/RETROSTIC_DISCOVERY.md` (reverse-engineering, URL patterns, edge behavior, resolution tiers), `docs/retrostic/RETROSTIC_API_V1.md` (official REST specification for Retrostic provider), and 8 formal ADRs (`ADR-R01` through `ADR-R08`).
+- Verified: DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).
+- Next context: Migrating Importer Core to .NET 10 LTS and implementing cross-platform abstractions.
+
 ## 2026-09-19 - Document Multi-Device Gaming Architecture and Acceptance Scenarios
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Produced formal acceptance testing documentation for Fire TV / Android TV (`FIRE_TV_ACCEPTANCE.md`) and Android Gamer Handheld Mode (`ANDROID_GAMER_ACCEPTANCE.md`). Established comprehensive Device, Emulator and Storage Compatibility Matrix (`COMPATIBILITY_MATRIX.md`).

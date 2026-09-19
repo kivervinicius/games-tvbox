@@ -36,6 +36,10 @@ $themeProfileSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\The
 $navigationTest = Join-Path $PSScriptRoot 'TvNavigationStateTest.java'
 $inputRouterSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ControllerInputRouter.java'
 $inputRouterTest = Join-Path $PSScriptRoot 'ControllerInputRouterTest.java'
+$gameActionSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\GameAction.java'
+$inputDeviceTypeSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\InputDeviceType.java'
+$inputManagerSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\InputManager.java'
+$inputManagerTest = Join-Path $PSScriptRoot 'InputManagerTest.java'
 $focusCoordinatorSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\TvFocusCoordinator.java'
 $focusCoordinatorTest = Join-Path $PSScriptRoot 'TvFocusCoordinatorTest.java'
 $stateThrottleSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\DeviceStateThrottle.java'
@@ -43,6 +47,24 @@ $stateThrottleTest = Join-Path $PSScriptRoot 'DeviceStateThrottleTest.java'
 $safeAreaTest = Join-Path $PSScriptRoot 'SafeAreaProfileTest.java'
 $libraryUiTest = Join-Path $PSScriptRoot 'LibraryUiStateTest.java'
 $themeProfileTest = Join-Path $PSScriptRoot 'ThemeProfileTest.java'
+$storageTypeSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\StorageType.java'
+$romStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\RomStorageStrategy.java'
+$baseRomStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\BaseRomStorageStrategy.java'
+$appStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\AppStorageStrategy.java'
+$legacyExternalStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\LegacyExternalStorageStrategy.java'
+$removableStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\RemovableStorageStrategy.java'
+$usbStorageStrategySource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\UsbStorageStrategy.java'
+$storagePathsSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\StoragePaths.java'
+$romStorageResolverSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\RomStorageResolver.java'
+$romStorageTest = Join-Path $PSScriptRoot 'RomStorageTest.java'
+$deviceTypeSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\DeviceType.java'
+$deviceProfileSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\DeviceProfile.java'
+$deviceProfileTest = Join-Path $PSScriptRoot 'DeviceProfileTest.java'
+$emulatorProviderSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\EmulatorProvider.java'
+$retroArchProviderSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\RetroArchProvider.java'
+$retroArchProviderTest = Join-Path $PSScriptRoot 'RetroArchProviderTest.java'
+$gamerDashboardStateSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\GamerDashboardState.java'
+$gamerDashboardStateTest = Join-Path $PSScriptRoot 'GamerDashboardStateTest.java'
 $catalogTest = Join-Path $PSScriptRoot 'catalog-store.tests.ps1'
 $buildScript = Join-Path $root 'scripts\Build-FireRetro.ps1'
 if (-not (Test-Path $manifest)) { throw 'Manifest is missing' }
@@ -73,44 +95,60 @@ if ($buildScriptText -notmatch 'classes\.args' -or $buildScriptText -notmatch '@
 if ($buildScriptText -notmatch 'FIRERETRO_KEYSTORE' -or $buildScriptText -match 'keystore\\fireretro\.keystore') { throw 'Build script must use an external signing keystore' }
 if ($buildScriptText -notmatch [regex]::Escape('ThemeState.java')) { throw 'Build script is missing the carousel state source' }
 $javaRoot = 'C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2024.1.4\jbr'
+$javacCmd = 'javac'
+$javaCmd = 'java'
+if ($IsWindows -and (Test-Path (Join-Path $javaRoot 'bin\javac.exe'))) {
+    $javacCmd = (Join-Path $javaRoot 'bin\javac.exe')
+    $javaCmd = (Join-Path $javaRoot 'bin\java.exe')
+}
 $testBuild = Join-Path $PSScriptRoot '.build'
 New-Item -ItemType Directory -Force -Path $testBuild | Out-Null
-& (Join-Path $javaRoot 'bin\javac.exe') -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest
+& $javacCmd -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $gameActionSource $inputDeviceTypeSource $inputManagerSource $inputManagerTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest $storageTypeSource $romStorageStrategySource $baseRomStorageStrategySource $appStorageStrategySource $legacyExternalStorageStrategySource $removableStorageStrategySource $usbStorageStrategySource $storagePathsSource $romStorageResolverSource $romStorageTest $deviceTypeSource $deviceProfileSource $deviceProfileTest $emulatorProviderSource $retroArchProviderSource $retroArchProviderTest $gamerDashboardStateSource $gamerDashboardStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior did not compile' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.LauncherStateTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.LauncherStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ThemeStateTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.ThemeStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Theme state behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ThemeCatalogTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.ThemeCatalogTest
 if ($LASTEXITCODE -ne 0) { throw 'Theme catalog behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerStateTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.ControllerStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Controller state behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerProfileTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.ControllerProfileTest
 if ($LASTEXITCODE -ne 0) { throw 'Controller profile behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.RemoteLibraryEndpointTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.RemoteLibraryEndpointTest
 if ($LASTEXITCODE -ne 0) { throw 'Remote library endpoint behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.CloudApiEndpointTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.CloudApiEndpointTest
 if ($LASTEXITCODE -ne 0) { throw 'Cloud API endpoint validation failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.AndroidAppEntryTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.AndroidAppEntryTest
 if ($LASTEXITCODE -ne 0) { throw 'Android app entry behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.AndroidAppSourceTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.AndroidAppSourceTest
 if ($LASTEXITCODE -ne 0) { throw 'Android app source behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.SettingsNavigationTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.SettingsNavigationTest
 if ($LASTEXITCODE -ne 0) { throw 'Settings navigation behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.TvNavigationStateTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.TvNavigationStateTest
 if ($LASTEXITCODE -ne 0) { throw 'TV navigation state behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerInputRouterTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.ControllerInputRouterTest
 if ($LASTEXITCODE -ne 0) { throw 'Controller input routing behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.TvFocusCoordinatorTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.InputManagerTest
+if ($LASTEXITCODE -ne 0) { throw 'Input manager behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.TvFocusCoordinatorTest
 if ($LASTEXITCODE -ne 0) { throw 'TV focus coordination behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.DeviceStateThrottleTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.DeviceStateThrottleTest
 if ($LASTEXITCODE -ne 0) { throw 'Device state throttling behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.SafeAreaProfileTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.SafeAreaProfileTest
 if ($LASTEXITCODE -ne 0) { throw 'Safe-area behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.LibraryUiStateTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.LibraryUiStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Library UI state behavior failed' }
-& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ThemeProfileTest
+& $javaCmd -cp $testBuild com.kiver.fireretro.ThemeProfileTest
 if ($LASTEXITCODE -ne 0) { throw 'Theme profile behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.RomStorageTest
+if ($LASTEXITCODE -ne 0) { throw 'RomStorage behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.DeviceProfileTest
+if ($LASTEXITCODE -ne 0) { throw 'DeviceProfile behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.RetroArchProviderTest
+if ($LASTEXITCODE -ne 0) { throw 'RetroArchProvider behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.GamerDashboardStateTest
+if ($LASTEXITCODE -ne 0) { throw 'GamerDashboardState behavior failed' }
 $manifestText = Get-Content $manifest -Raw
 if ($manifestText -notmatch 'android\.intent\.category\.LEANBACK_LAUNCHER') { throw 'TV launcher category is missing' }
 if ($manifestText -notmatch 'android:label="Jogos Retro"') { throw 'The Fire TV app name must be Jogos Retro' }

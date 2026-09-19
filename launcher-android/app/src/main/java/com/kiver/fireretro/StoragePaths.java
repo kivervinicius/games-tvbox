@@ -17,18 +17,9 @@ final class StoragePaths {
         return null;
     }
     static File romRoot() {
-        File removable = removableRoot();
-        if (removable != null) {
-            File root = new File(removable, "roms");
-            if (!root.exists()) root.mkdirs();
-            return root;
-        }
-        return new File("/sdcard/roms");
+        return RomStorageResolver.getDefault().resolvePrimaryWritableStorage().getRomDirectory();
     }
     static String remapRomPath(String path) {
-        if (path == null || !path.startsWith(LOGICAL_ROM_PREFIX)) return path;
-        File removable = removableRoot();
-        if (removable == null) return path;
-        return new File(new File(removable, "roms"), path.substring(LOGICAL_ROM_PREFIX.length())).getAbsolutePath();
+        return RomStorageResolver.getDefault().remapRomPath(path);
     }
 }

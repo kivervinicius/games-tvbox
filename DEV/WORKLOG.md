@@ -1,5 +1,11 @@
 # Worklog — Games TV Box Gaming Platform
 
+## 2026-09-19 - Implement Android Core Abstractions (Storage, Input, Device Profiles, Emulator Provider, Gamer Dashboard)
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Implemented `RomStorageStrategy` tier (`StorageType`, `BaseRomStorageStrategy`, `AppStorageStrategy`, `LegacyExternalStorageStrategy`, `RemovableStorageStrategy`, `UsbStorageStrategy`, `RomStorageResolver`, backwards-compatible `StoragePaths`). Implemented decoupled Input subsystem (`GameAction`, `InputDeviceType`, `InputManager` with repeat throttling and gesture recognition). Implemented `DeviceProfile` & `DeviceType` inference engine. Implemented `EmulatorProvider` & `RetroArchProvider` for 32/64-bit ABI package and core resolution. Implemented `GamerDashboardState` with battery, storage, and touch fallback evaluation. Created 4 comprehensive test suites in `launcher-android/tests/`.
+- Verified: All 21 Java unit tests in `project.tests.ps1` passed cleanly; all 42 Cloudflare tests passed.
+- Next context: MainActivity modular decomposition and Gradle multi-variant build migration (`tv` and `gamer`).
+
 ## 2026-09-19 - Implement Canonical Platform Registry and Compatibility Engine
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Created canonical `shared/platform-registry.json` unifying platform metadata, emulator cores, and pipeline status across Cloud, Android and Importer. Implemented `cloudflare/worker/src/compatibility.mjs` with `CompatibilityEngine` evaluating storage budget, Android API level, ABI architecture, input modalities and fallback handling. Created comprehensive tests in `cloudflare/tests/compatibility.test.mjs`.

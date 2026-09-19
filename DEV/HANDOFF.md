@@ -2,14 +2,14 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Multi-Platform Intake Pipeline, Canonical Content Identity, and Atomic Cloud Publication completed and verified
+- Entry: Retrostic Cross-Platform Importer (.NET 10 LTS, Avalonia Desktop UI, Resumable Download Engine, Multi-Platform Intake) Complete
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: importer-windows/src/JogosRetroImporter.Core/IPlatformImportStrategy.cs, PlatformStrategies.cs, ArchiveExtractor.cs, ImportPipeline.cs, PlatformRegistry.cs, CloudPublisherClient.cs, tests/Program.cs
-- Verified: 100% of Importer suite passed on Linux, DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
-- Next context: Avalonia cross-platform desktop UI (`JogosRetro.Desktop`) and final verification report
+- Changed: importer-windows/src/JogosRetro.Desktop/*, importer-windows/JogosRetroImporter.sln, docs/retrostic/IMPLEMENTATION_REPORT.md
+- Verified: 100% of entire test matrix passed (Cloudflare 45/45, Android 21/21, Importer 100%, Windows Manager PASS), DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
+- Next context: Ready for Maestro final review
 
 ## Latest Work
-Implementado o motor de ingestão multi-plataforma (`IPlatformImportStrategy`) com suporte a PlayStation (conversão CHD e verificação) e sistemas de cartucho (NES, SNES, Mega Drive e GBA com validação e passthrough). Fortalecido o `ArchiveExtractor` com proteções contra Zip Bomb (limite de 4 GB descompactado) e Zip Slip (rejeição estrita de travessia de diretório). Estabelecida a separação e persistência de `canonicalArtifactSha256` e `sourceArtifactSha256` com `contentId = sha256:...`. Atualizado o `CloudPublisherClient` para publicação atômica multi-ativo (R2 cover + R2 ROM + commit único no catálogo).
+Construída e validada a aplicação desktop oficial multiplataforma `JogosRetro.Desktop` em Avalonia UI 11 mirando .NET 10 LTS (`net10.0`), operando de forma idêntica em Linux e Windows. Integrados todos os subsistemas: busca e navegação no catálogo Retrostic, fila de downloads persistentes com pause/resume/cancel, ingestão local multi-plataforma e publicação atômica na nuvem. Produzido o relatório final de implementação em `docs/retrostic/IMPLEMENTATION_REPORT.md`.
 
 ## Recent Entries
 - 2026-09-19: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified.

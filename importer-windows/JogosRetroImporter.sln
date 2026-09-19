@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JogosRetroImporter.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JogosRetro.Downloads", "src\JogosRetro.Downloads\JogosRetro.Downloads.csproj", "{83284212-FFA4-4D33-89E7-D6A3CD693FDA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JogosRetro.Desktop", "src\JogosRetro.Desktop\JogosRetro.Desktop.csproj", "{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +75,18 @@ Global
 		{83284212-FFA4-4D33-89E7-D6A3CD693FDA}.Release|x64.Build.0 = Release|Any CPU
 		{83284212-FFA4-4D33-89E7-D6A3CD693FDA}.Release|x86.ActiveCfg = Release|Any CPU
 		{83284212-FFA4-4D33-89E7-D6A3CD693FDA}.Release|x86.Build.0 = Release|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Debug|x64.Build.0 = Debug|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Debug|x86.Build.0 = Debug|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Release|x64.ActiveCfg = Release|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Release|x64.Build.0 = Release|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Release|x86.ActiveCfg = Release|Any CPU
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,5 +96,6 @@ Global
 		{4E26F37E-B353-41EE-944F-7AC75A991E0A} = {52C2B63E-1664-47EE-BF51-E489571E89F9}
 		{E5F15221-633D-4C5E-8FC7-301DB3E40F34} = {5C3AF4B8-5E89-4527-80EA-C98A1AC181A2}
 		{83284212-FFA4-4D33-89E7-D6A3CD693FDA} = {52C2B63E-1664-47EE-BF51-E489571E89F9}
+		{025EB3FE-E2DF-4A22-87FE-95CCE3EFEA1B} = {52C2B63E-1664-47EE-BF51-E489571E89F9}
 	EndGlobalSection
 EndGlobal

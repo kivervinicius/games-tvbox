@@ -1,0 +1,180 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:JogosRetro.Desktop.ViewModels"
+        xmlns:core="using:JogosRetroImporter.Core"
+        x:Class="JogosRetro.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Jogos Retro — Cross-Platform Importer &amp; Retrostic"
+        Width="1050" Height="700"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.DataTemplates>
+        <!-- Catalog View -->
+        <DataTemplate DataType="vm:CatalogViewModel">
+            <Grid RowDefinitions="Auto,Auto,*" Margin="20">
+                <TextBlock Grid.Row="0" Text="Buscar no Catálogo Retrostic" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15" />
+                
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,15">
+                    <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}" Watermark="Digite o título do jogo (ex.: Crash Bandicoot, Mario, Sonic)…" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Platforms}" SelectedItem="{Binding SelectedPlatform, Mode=TwoWay}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                    <Button Grid.Column="2" Content="Buscar" Command="{Binding SearchAsync}" IsEnabled="{Binding !IsBusy}" Padding="20,8" VerticalAlignment="Center" />
+                </Grid>
+
+                <Grid Grid.Row="2" RowDefinitions="*,Auto">
+                    <ListBox Grid.Row="0" ItemsSource="{Binding SearchResults}" SelectedItem="{Binding SelectedGame, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="core:GameSearchResult">
+                                <Border Padding="10" Margin="0,2" Background="#1a1a1a" CornerRadius="6">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <TextBlock Grid.Column="0" Text="🎮" FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <Border Background="#333333" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                    <TextBlock Text="{Binding PlatformId}" FontSize="11" />
+                                                </Border>
+                                                <TextBlock Text="{Binding Region}" FontSize="12" Foreground="#888888" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Content="Baixar &amp; Ingerir"
+                                                Command="{Binding $parent[ListBox].((vm:CatalogViewModel)DataContext).DownloadSelectedAsync}"
+                                                VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Grid.Row="1" Text="{Binding StatusMessage}" Foreground="#aaaaaa" Margin="0,10,0,0" />
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Downloads View -->
+        <DataTemplate DataType="vm:DownloadsViewModel">
+            <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,15">
+                    <TextBlock Grid.Column="0" Text="Fila de Downloads Resumíveis" FontSize="20" FontWeight="SemiBold" />
+                    <Button Grid.Column="1" Content="Atualizar Fila" Command="{Binding Refresh}" />
+                </Grid>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DownloadItemViewModel">
+                            <Border Padding="12" Margin="0,4" Background="#1a1a1a" CornerRadius="6">
+                                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Filename}" FontSize="15" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StateText}" FontWeight="Bold" Foreground="#4cc2ff" />
+                                    
+                                    <ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Value="{Binding Progress}" Maximum="100" Height="8" Margin="0,8" />
+                                    
+                                    <Grid Grid.Row="2" Grid.Column="0" ColumnDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding SpeedText}" FontSize="12" Foreground="#888888" Margin="0,0,15,0" />
+                                        <TextBlock Grid.Column="1" Text="{Binding ErrorText}" FontSize="12" Foreground="#ff6666" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
+                    <Button Content="Pausar" Command="{Binding PauseSelectedAsync}" />
+                    <Button Content="Retomar" Command="{Binding ResumeSelectedAsync}" />
+                    <Button Content="Cancelar" Command="{Binding CancelSelectedAsync}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Local Import View -->
+        <DataTemplate DataType="vm:LocalImportViewModel">
+            <ScrollViewer>
+                <StackPanel Margin="20" Spacing="15" MaxWidth="700" HorizontalAlignment="Left">
+                    <TextBlock Text="Importação de Arquivo Local" FontSize="20" FontWeight="SemiBold" />
+                    
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Caminho do Arquivo (CUE, BIN, ISO, CHD, SFC, SMC, NES, MD, GBA, 7Z, ZIP):" FontSize="13" />
+                        <TextBox Text="{Binding FilePath, Mode=TwoWay}" Watermark="/caminho/para/o/jogo.zip" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Plataforma de Destino:" FontSize="13" />
+                        <ComboBox ItemsSource="{Binding SupportedPlatforms}" SelectedItem="{Binding SelectedPlatform, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Capa Opcional (Imagem JPG/PNG):" FontSize="13" />
+                        <TextBox Text="{Binding CoverPath, Mode=TwoWay}" Watermark="/caminho/para/capa.jpg" />
+                    </StackPanel>
+
+                    <Button Content="Processar &amp; Publicar na Nuvem" Command="{Binding ProcessAndPublishAsync}" IsEnabled="{Binding !IsBusy}" Padding="20,10" Background="#0078d4" Foreground="White" />
+
+                    <ProgressBar Value="{Binding Progress}" Maximum="100" Height="6" IsVisible="{Binding IsBusy}" />
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#cccccc" />
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <!-- Settings View -->
+        <DataTemplate DataType="vm:SettingsViewModel">
+            <ScrollViewer>
+                <StackPanel Margin="20" Spacing="15" MaxWidth="700" HorizontalAlignment="Left">
+                    <TextBlock Text="Configurações do Importador &amp; Nuvem" FontSize="20" FontWeight="SemiBold" />
+                    
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="URL da API Jogos Retro Cloud:" FontSize="13" />
+                        <TextBox Text="{Binding CloudUrl, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Status do Token de Pareamento:" FontSize="13" />
+                        <TextBox Text="{Binding TokenStatus}" IsReadOnly="True" />
+                        <Button Content="Limpar Token" Command="{Binding ClearToken}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Status do CHDMAN:" FontSize="13" />
+                        <TextBox Text="{Binding ToolsStatus}" IsReadOnly="True" />
+                        <TextBlock Text="{Binding ChdmanPath}" FontSize="11" Foreground="#888888" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Diretórios do Sistema (Conforme XDG / LocalAppData):" FontSize="13" />
+                        <TextBlock Text="Configuração:" FontSize="12" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding ConfigDir}" FontSize="11" Foreground="#888888" />
+                        <TextBlock Text="Cache / Sessões:" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding CacheDir}" FontSize="11" Foreground="#888888" />
+                        <TextBlock Text="Dados / Fila:" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding DataDir}" FontSize="11" Foreground="#888888" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Grid ColumnDefinitions="220,*">
+        <!-- Sidebar Navigation -->
+        <Border Grid.Column="0" Background="#111111" BorderBrush="#222222" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto,*,Auto" Margin="15,20,15,15">
+                <StackPanel Grid.Row="0" Margin="0,0,0,25">
+                    <TextBlock Text="JOGOS RETRO" FontSize="18" FontWeight="Bold" Foreground="#4cc2ff" />
+                    <TextBlock Text="Cross-Platform Importer v2.0" FontSize="11" Foreground="#888888" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Spacing="8">
+                    <Button Content="🔍 Buscar no Retrostic" Command="{Binding NavigateToCatalog}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10" />
+                    <Button Content="📥 Fila de Downloads" Command="{Binding NavigateToDownloads}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10" />
+                    <Button Content="📦 Importar Arquivo" Command="{Binding NavigateToLocalImport}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10" />
+                    <Button Content="⚙️ Configurações" Command="{Binding NavigateToSettings}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10" />
+                </StackPanel>
+
+                <TextBlock Grid.Row="2" Text="Linux + Windows .NET 10" FontSize="10" Foreground="#555555" HorizontalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Main Content Host -->
+        <Border Grid.Column="1" Background="#1e1e1e">
+            <ContentControl Content="{Binding CurrentView}" />
+        </Border>
+    </Grid>
+</Window>

@@ -79,10 +79,10 @@ Budget unmeasured here (no emulator/profiler). Known hot spots documented
 
 ## Test Matrix
 
-23/23 pwsh+javac suites green on Linux. Added: DeviceProfileEngine (11),
-AccessibleColorResolver (6 groups), RetroArchCoreCatalog (5),
-AnalogInputFilter (5), AppManagedStorage (3), InputManagerExtended (7
-asserts). Missing: on-device install/focus/TalkBack/font/device-farm runs.
+29/29 pwsh+javac suites green on Linux. Increment 2 added: SafLocation,
+DownloadStateMachine, AccessibilityAnnouncer, FavoriteIdentity,
+WindowSizeClass, ThemeTokens. Missing: on-device install/focus/TalkBack/
+font/device-farm runs.
 
 ## Visual Evidence
 
@@ -98,9 +98,12 @@ feature, OK/PARTIAL/LEGACY/MISSING).
 ## Known Limitations
 
 No SDK, no Java 17, no emulator, no Compose deps, no screenshots, no
-TalkBack run, SAF absent, download state machine UI absent, neutral pairing
-copy absent, native IME absent, `<queries>` absent, notification perm (33)
-unhandled, FGS types (34) unhandled.
+TalkBack run. Landed since: SAF logical layer (`SafLocation` + `SAF_TREE`
+type; OS grant wiring pending), download state machine + announcer policy
+(UI wiring pending), favorites identity migration helper (prefs wiring
+pending), `<queries>` for RetroArch packages, WindowSizeClass + ThemeTokens.
+Still open: neutral pairing copy, native IME, notification perm (33), FGS
+types (34).
 
 ## Technical Debt (carried, not created)
 
@@ -111,7 +114,8 @@ adapters; `woble` typo in `ControllerRegistry:38`.
 ## Commits
 
 Uncommitted by constitution (rules.md #1: human validates production
-changes). Proposed sequence when maestro approves:
+changes) on `feature/cloud-admin` working tree per maestro (no branch
+switch). Proposed sequence when maestro approves:
 `docs(android): capture universal-gaming baseline` (docs/ only), then
 `feat(device): ...`, `feat(accessibility): ...`, `feat(runtime): ...`,
 `feat(input): ...`, `feat(storage): ...`, `fix(android): ...pendingintent+manifest`.

@@ -74,3 +74,9 @@
 - Changed: new Platform/ExperienceMode/DeviceCapabilities/DeviceProfileEngine, AccessibleColorResolver, RetroArchCoreCatalog, AnalogInputFilter, AppManagedStorageStrategy; extended GameAction/PAGE_*, InputManager SELECT/PAGE, ControllerInputRouter analog, EmulatorProvider defaults, RetroArchProvider selectBest/isAvailable/coreId, RomStorageResolver.withAppManaged, CatalogStore cloudId merge, FLAG_IMMUTABLE, manifest gamepad+television; 6 new test suites + ThemeCustomizationTest wired + 2 harness guards
 - Verified: pwsh tests/project.tests.ps1 23/23 PASS exit 0; Gradle assemble blocked (Java 11 vs AGP 17, no SDK) recorded as FACT-A015
 - Next context: shell scaffolding (Tv/Gamer), Activity wiring, SAF, emulator matrix; commits intentionally uncommitted per rules.md #1
+
+## 2026-09-19 - Android Universal Gaming increment 2 (same branch per maestro)
+- Spec: universal-gaming mission, continued on feature/cloud-admin working tree (no branch switch per maestro)
+- Changed: new SafLocation, DownloadStateMachine, AccessibilityAnnouncer, FavoriteIdentity, WindowSizeClass, ThemeTokens; StorageType += SAF_TREE/CLOUD_CACHE; manifest <queries> for RetroArch packages; 6 new suites + 3 harness guards wired
+- Verified: pwsh tests/project.tests.ps1 29/29 PASS exit 0
+- Next context: Tv/Gamer shell scaffolding, MainActivity wiring (selectBest/withAppManaged/announcer), SAF OS-grant wiring, prefs favorites migration, emulator matrix

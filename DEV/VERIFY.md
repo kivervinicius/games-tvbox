@@ -2,7 +2,7 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: Android Universal Gaming foundation, branch feat/android-universal-gaming-redesign (base 5812d13)
+- Scope: Android Universal Gaming increments 1+2, feature/cloud-admin working tree (no branch switch per maestro)
 
 ## Commands
 - `pwsh -NoProfile -File launcher-android/tests/project.tests.ps1` (exit 0, 23 suites PASS)
@@ -10,8 +10,8 @@
 
 ## Outcome
 - Passed:
-  - Android suite: 23/23 (16 legacy incl. newly-wired ThemeCustomizationTest + 6 new: DeviceProfileEngine, AccessibleColorResolver, RetroArchCoreCatalog, AnalogInputFilter, AppManagedStorage, InputManagerExtended)
-  - Manifest guards (LEANBACK kept, gamepad declared) and FLAG_IMMUTABLE guard
+  - Android suite: 29/29 (16 legacy incl. wired ThemeCustomizationTest + 13 new: DeviceProfileEngine, AccessibleColorResolver, RetroArchCoreCatalog, AnalogInputFilter, AppManagedStorage, InputManagerExtended, SafLocation, DownloadStateMachine, AccessibilityAnnouncer, FavoriteIdentity, WindowSizeClass, ThemeTokens)
+  - Manifest guards (LEANBACK kept, gamepad declared, `<queries>` for RetroArch) and FLAG_IMMUTABLE guard
 - Failed: 0
 - Blocked: Gradle APK compile (environment limitation, FACT-A015); on-device, emulator, screenshot and TalkBack runs pending.
 

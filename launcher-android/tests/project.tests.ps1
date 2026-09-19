@@ -131,7 +131,7 @@ if ($IsWindows -and (Test-Path (Join-Path $javaRoot 'bin\javac.exe'))) {
 }
 $testBuild = Join-Path $PSScriptRoot '.build'
 New-Item -ItemType Directory -Force -Path $testBuild | Out-Null
-& $javacCmd -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCustomizationTest $themeTokensSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $gameActionSource $inputDeviceTypeSource $inputManagerSource $inputManagerTest $inputManagerExtendedTest $analogInputFilterSource $analogInputFilterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest $accessibleColorResolverSource $accessibleColorResolverTest $windowSizeClassSource $windowSizeClassTest $themeTokensSource $themeTokensTest $storageTypeSource $romStorageStrategySource $baseRomStorageStrategySource $appStorageStrategySource $appManagedStorageStrategySource $legacyExternalStorageStrategySource $removableStorageStrategySource $usbStorageStrategySource $storagePathsSource $romStorageResolverSource $romStorageTest $appManagedStorageTest $safLocationSource $safLocationTest $downloadStateMachineSource $downloadStateMachineTest $accessibilityAnnouncerSource $accessibilityAnnouncerTest $favoriteIdentitySource $favoriteIdentityTest $deviceTypeSource $deviceProfileSource $platformSource $experienceModeSource $deviceCapabilitiesSource $deviceProfileEngineSource $deviceProfileTest $deviceProfileEngineTest $emulatorProviderSource $retroArchCoreCatalogSource $retroArchProviderSource $retroArchProviderTest $retroArchCoreCatalogTest $gamerDashboardStateSource $gamerDashboardStateTest
+& $javacCmd -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCustomizationTest $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $gameActionSource $inputDeviceTypeSource $inputManagerSource $inputManagerTest $inputManagerExtendedTest $analogInputFilterSource $analogInputFilterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest $accessibleColorResolverSource $accessibleColorResolverTest $windowSizeClassSource $windowSizeClassTest $themeTokensSource $themeTokensTest $storageTypeSource $romStorageStrategySource $baseRomStorageStrategySource $appStorageStrategySource $appManagedStorageStrategySource $legacyExternalStorageStrategySource $removableStorageStrategySource $usbStorageStrategySource $storagePathsSource $romStorageResolverSource $romStorageTest $appManagedStorageTest $safLocationSource $safLocationTest $downloadStateMachineSource $downloadStateMachineTest $accessibilityAnnouncerSource $accessibilityAnnouncerTest $favoriteIdentitySource $favoriteIdentityTest $deviceTypeSource $deviceProfileSource $platformSource $experienceModeSource $deviceCapabilitiesSource $deviceProfileEngineSource $deviceProfileTest $deviceProfileEngineTest $emulatorProviderSource $retroArchCoreCatalogSource $retroArchProviderSource $retroArchProviderTest $retroArchCoreCatalogTest $gamerDashboardStateSource $gamerDashboardStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior did not compile' }
 & $javaCmd -cp $testBuild com.kiver.fireretro.LauncherStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior failed' }
@@ -191,6 +191,18 @@ if ($LASTEXITCODE -ne 0) { throw 'Analog input filter behavior failed' }
 if ($LASTEXITCODE -ne 0) { throw 'App-managed storage behavior failed' }
 & $javaCmd -cp $testBuild com.kiver.fireretro.InputManagerExtendedTest
 if ($LASTEXITCODE -ne 0) { throw 'Input manager extended behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.SafLocationTest
+if ($LASTEXITCODE -ne 0) { throw 'SAF location behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.DownloadStateMachineTest
+if ($LASTEXITCODE -ne 0) { throw 'Download state machine behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.AccessibilityAnnouncerTest
+if ($LASTEXITCODE -ne 0) { throw 'Accessibility announcer behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.FavoriteIdentityTest
+if ($LASTEXITCODE -ne 0) { throw 'Favorite identity behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.WindowSizeClassTest
+if ($LASTEXITCODE -ne 0) { throw 'Window size class behavior failed' }
+& $javaCmd -cp $testBuild com.kiver.fireretro.ThemeTokensTest
+if ($LASTEXITCODE -ne 0) { throw 'Theme tokens behavior failed' }
 $manifestText = Get-Content $manifest -Raw
 if ($manifestText -notmatch 'android\.intent\.category\.LEANBACK_LAUNCHER') { throw 'TV launcher category is missing' }
 if ($manifestText -notmatch 'android:label="Jogos Retro"') { throw 'The Fire TV app name must be Jogos Retro' }
@@ -200,6 +212,8 @@ if ($manifestText -notmatch 'android:versionCode="20260936"') { throw 'The Fire 
 if ($manifestText -notmatch 'android.permission.REQUEST_INSTALL_PACKAGES') { throw 'APK installation permission is missing' }
 if ($manifestText -notmatch 'android:name="android.software.leanback"') { throw 'The Fire TV app must declare the Leanback launcher tile' }
 if ($manifestText -notmatch 'android:name="android.hardware.gamepad"') { throw 'The universal app must declare gamepad support' }
+if ($manifestText -notmatch '<queries>') { throw 'Package visibility queries are missing for emulator runtime detection' }
+if ($manifestText -notmatch 'com\.retroarch\.ra32') { throw 'RetroArch runtime queries are missing' }
 if ($manifestText -notmatch '<activity[^>]*android:banner="@drawable/jogos_retro_banner"') { throw 'The Leanback activity must expose the widescreen artwork' }
 if ($manifestText -notmatch '<activity[^>]*android:icon="@drawable/fireretro_home_icon_v2"') { throw 'The Leanback activity must expose the dedicated home icon' }
 if ($manifestText -notmatch '<activity-alias[^>]*android:name="\.FireTvHome"') { throw 'The Fire TV launcher alias is missing' }

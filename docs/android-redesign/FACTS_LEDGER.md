@@ -21,3 +21,5 @@ Facts need evidence. Hypotheses are not listed here.
 | FACT-A015 | Gradle APK build blocked here: AGP needs Java 17 (only 11 present), no Android SDK | `gradle :app:assembleDebug` output |
 | FACT-A016 | `feature/cloud-admin` = `5812d13`, 8 commits ahead of `068bf51` | `git log --oneline 068bf51..feature/cloud-admin` |
 | FACT-A017 | Branch `feat/android-universal-gaming-redesign` created from `5812d13`; `MainActivity` untouched | `git status` / branch diff |
+| FACT-A018 | Increment 2 (same branch per maestro): SafLocation, DownloadStateMachine, AccessibilityAnnouncer, FavoriteIdentity, WindowSizeClass, ThemeTokens + SAF_TREE/CLOUD_CACHE types + manifest `<queries>` for RetroArch | branch diff, `AndroidManifest.xml` |
+| FACT-A019 | 29/29 launcher suites green on Linux (pwsh+javac 11) | `pwsh -File launcher-android/tests/project.tests.ps1`, exit 0 |

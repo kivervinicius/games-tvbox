@@ -8,17 +8,33 @@ public sealed record ParsedGameTitle(string Title, string Region);
 
 public static partial class GameTitleParser
 {
-    [GeneratedRegex(@"\s*\((?<region>USA|Europe|Japan|World|Brazil)[^)]*\)\s*", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\s*\((?<region>USA|U|E|Europe|Japan|J|World|Brazil|B)[^)]*\)\s*", RegexOptions.IgnoreCase)]
     private static partial Regex RegionExpression();
+
+    [GeneratedRegex(@"\s*\[[^\]]+\]\s*", RegexOptions.IgnoreCase)]
+    private static partial Regex BracketTagExpression();
+
+    [GeneratedRegex(@"\s*\((?:No EDC|Rev\s*\d+|v?\d+(?:\.\d+)+|Demo|Beta|Proto|Sample)[^)]*\)\s*", RegexOptions.IgnoreCase)]
+    private static partial Regex ReleaseTagExpression();
 
     public static ParsedGameTitle Parse(string path)
     {
         var name = Path.GetFileNameWithoutExtension(path).Trim();
         var match = RegionExpression().Match(name);
-        var region = match.Success ? match.Groups["region"].Value : "";
-        var title = Regex.Replace(RegionExpression().Replace(name, " "), @"\s+", " ").Trim(' ', '-', '_');
+        var region = match.Success ? NormalizeRegion(match.Groups["region"].Value) : "";
+        var title = BracketTagExpression().Replace(ReleaseTagExpression().Replace(RegionExpression().Replace(name, " "), " "), " ");
+        title = Regex.Replace(title, @"\s+", " ").Trim(' ', '-', '_');
         return new ParsedGameTitle(title, region);
     }
+
+    private static string NormalizeRegion(string value) => value.ToUpperInvariant() switch
+    {
+        "U" or "USA" => "USA",
+        "E" or "EUROPE" => "Europe",
+        "J" or "JAPAN" => "Japan",
+        "B" or "BRAZIL" => "Brazil",
+        _ => "World"
+    };
 }
 
 public static class PlatformDetector

@@ -16,6 +16,8 @@ try
 
     var title = GameTitleParser.Parse("Mega Man X4 (USA).7z");
     Assert(title.Title == "Mega Man X4" && title.Region == "USA", "Title and region were not normalized");
+    var noIntro = GameTitleParser.Parse("CTR - Crash Team Racing (E) (No EDC) [SCES-02105].7z");
+    Assert(noIntro.Title == "CTR - Crash Team Racing" && noIntro.Region == "Europe", "No-Intro title was not normalized");
     Assert(PlatformDetector.Detect("game.cue") == GamePlatform.PlayStation, "PlayStation detection failed");
     Assert(PlatformDetector.Detect("game.gba") == GamePlatform.GameBoyAdvance, "GBA detection failed");
 

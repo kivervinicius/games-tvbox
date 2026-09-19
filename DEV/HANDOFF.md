@@ -2,14 +2,14 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: .NET 10 LTS Migration and Platform-Neutral Abstractions completed and verified
+- Entry: Game Source Provider Contracts and Retrostic Adapters completed and verified
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: importer-windows/src/JogosRetroImporter.Core/*, importer-windows/src/JogosRetroImporter/*, importer-windows/tests/JogosRetroImporter.Tests/*
+- Changed: importer-windows/src/JogosRetroImporter.Core/GameSourceModels.cs, importer-windows/src/JogosRetroImporter.Core/RetrosticResolvers.cs, importer-windows/tests/fixtures/retrostic/*, importer-windows/tests/JogosRetroImporter.Tests/Program.cs
 - Verified: Importer Tests executed on Linux on .NET 10 (100% assertions pass), DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
-- Next context: Implementing Game Source Provider contracts and Retrostic adapters (API, HTML, and Browser resolvers)
+- Next context: Implementing Persistent Resumable Download Manager (`JogosRetro.Downloads`) with HTTP Range probing, retry backoff, and local fault simulation server
 
 ## Latest Work
-Migrada a solução `JogosRetroImporter` para .NET 10 LTS (`net10.0`). Criadas as abstrações de plataforma `IPlatformServices`, `IAppPaths` (compatível com Linux XDG e Windows LocalAppData), `ICredentialStore` (AES-256-GCM autenticado no Linux e DPAPI no Windows) e `IToolchainResolver` (resolução dinâmica de executáveis `chdman`/`chdman.exe` e permissões de execução). Desacoplados `SecureTokenStore`, `ToolchainManager` e `ImportPipeline`. Testes executados e validados no Linux com 100% de sucesso.
+Implementados os contratos de provedor de fonte de jogos (`IGameSourceProvider`) e os adaptadores oficiais do Retrostic (`RetrosticApiResolver` para API REST v1, `RetrosticHtmlResolver` com parsing resiliente de HTML de busca, detalhes e contagem de download, `IRetrosticBrowserBridge` para desafios de borda, e `RetrosticSourceProvider` com estratégia de cascata `API > HTML > BROWSER`). Criadas fixtures determinísticas e testes unitários cobrindo todos os caminhos felizes e fallbacks.
 
 ## Recent Entries
 - 2026-09-19: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified.

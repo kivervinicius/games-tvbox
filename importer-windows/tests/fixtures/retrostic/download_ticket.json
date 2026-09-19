@@ -1,0 +1,14 @@
+{
+  "ticketId": "tkt_test_12345",
+  "gameId": "ps1-crash-bandicoot-usa",
+  "downloadUrl": "https://downloads.retrostic.com/roms/ps1/Crash%20Bandicoot%20(USA).7z?ticket=tkt_test_12345",
+  "filename": "Crash Bandicoot (USA).7z",
+  "sizeBytes": 45612346,
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "supportsRange": true,
+  "expiresAt": 1726750000,
+  "headers": {
+    "User-Agent": "JogosRetroImporter/2.0",
+    "Referer": "https://www.retrostic.com/roms/ps1/crash-bandicoot"
+  }
+}

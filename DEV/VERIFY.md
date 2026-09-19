@@ -2,7 +2,7 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: .NET 10 LTS Migration, PlatformServices, AppPaths, CrossPlatformCredentialStore, ToolchainResolver, and Importer Tests on Linux
+- Scope: GameSourceModels, RetrosticResolvers (API, HTML, Browser bridge), RetrosticSourceProvider, and Test Fixtures
 
 ## Commands
 - `export PATH="$HOME/.dotnet:$PATH" && dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj`

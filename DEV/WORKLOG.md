@@ -1,6 +1,10 @@
 # Worklog — Games TV Box Gaming Platform
 
-## 2026-09-19 - Migrate Importer Solution to .NET 10 LTS and Platform-Neutral Abstractions
+## 2026-09-19 - Implement Game Source Provider Contracts and Retrostic Multi-Tier Adapters
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Created `GameSourceModels.cs` defining `IGameSourceProvider`, `GameSearchQuery`, `GameSearchResult`, `GameSourceDetails`, `SourceFile`, and `DownloadDescriptor`. Implemented `RetrosticResolvers.cs` with `RetrosticApiResolver` (for official REST v1), `RetrosticHtmlResolver` (HTML parser with title, region, size, and download countdown extraction), `IRetrosticBrowserBridge`, and `RetrosticSourceProvider` multi-tier coordinator (`API > HTML > BROWSER`). Added comprehensive deterministic test fixtures in `importer-windows/tests/fixtures/retrostic/` and unit test coverage.
+- Verified: `dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj` passed all assertions on Linux with 0 warnings and 0 errors. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).
+- Next context: Implementing Persistent Resumable Download Manager (`JogosRetro.Downloads`) with HTTP Range probing, retry backoff, and local fault simulation server.
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Migrated `JogosRetroImporter.Core` and `JogosRetroImporter.Tests` to `net10.0` (and WinForms app to `net10.0-windows`). Implemented cross-platform abstractions: `IPlatformServices` & `PlatformServices` (OS and arch detection), `IAppPaths` & `AppPaths` (Linux XDG and Windows LocalAppData), `ICredentialStore` & `CrossPlatformCredentialStore` (AES-256-GCM authenticated encryption on Linux and DPAPI on Windows), `IToolchainResolver` & `ToolchainResolver` (executable naming and PATH resolution for chdman). Decoupled `SecureTokenStore`, `ToolchainManager`, and `ImportPipeline`. Added comprehensive tests.
 - Verified: `dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj` executed on Linux with 100% assertions passing. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).

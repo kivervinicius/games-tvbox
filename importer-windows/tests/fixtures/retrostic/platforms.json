@@ -1,0 +1,49 @@
+{
+  "platforms": [
+    {
+      "id": "ps1",
+      "slug": "playstation",
+      "name": "Sony PlayStation",
+      "category": "Console",
+      "supportedExtensions": [".cue", ".bin", ".iso", ".chd"],
+      "canonicalFormat": "chd",
+      "gameCount": 1640
+    },
+    {
+      "id": "snes",
+      "slug": "super-nintendo",
+      "name": "Super Nintendo",
+      "category": "Console",
+      "supportedExtensions": [".smc", ".sfc"],
+      "canonicalFormat": "sfc",
+      "gameCount": 1757
+    },
+    {
+      "id": "nes",
+      "slug": "nintendo",
+      "name": "Nintendo Entertainment System",
+      "category": "Console",
+      "supportedExtensions": [".nes"],
+      "canonicalFormat": "nes",
+      "gameCount": 1820
+    },
+    {
+      "id": "megadrive",
+      "slug": "genesis",
+      "name": "Sega Genesis / Mega Drive",
+      "category": "Console",
+      "supportedExtensions": [".md", ".gen", ".bin"],
+      "canonicalFormat": "md",
+      "gameCount": 915
+    },
+    {
+      "id": "gba",
+      "slug": "gameboy-advance",
+      "name": "Game Boy Advance",
+      "category": "Handheld",
+      "supportedExtensions": [".gba"],
+      "canonicalFormat": "gba",
+      "gameCount": 1498
+    }
+  ]
+}

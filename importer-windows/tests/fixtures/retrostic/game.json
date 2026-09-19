@@ -1,0 +1,21 @@
+{
+  "id": "ps1-crash-bandicoot-usa",
+  "slug": "crash-bandicoot",
+  "platformId": "ps1",
+  "title": "Crash Bandicoot",
+  "region": "USA",
+  "releaseYear": 1996,
+  "publisher": "Sony Computer Entertainment",
+  "developer": "Naughty Dog",
+  "description": "Crash Bandicoot is an action platform game.",
+  "coverUrl": "https://images.retrostic.com/covers/ps1/crash-bandicoot.jpg",
+  "screenshots": [
+    "https://images.retrostic.com/screens/ps1/crash-bandicoot-1.jpg"
+  ],
+  "sourceArchive": {
+    "filename": "Crash Bandicoot (USA).7z",
+    "sizeBytes": 45612346,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "format": "7z"
+  }
+}

@@ -80,12 +80,14 @@ function validateManifestItem(item, upload, expectedSigner) {
   if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ApiError(400, 'invalid_item', 'Every published item must be an object.');
   const kind = String(item.kind || upload.kind);
   const category = String(item.category || (kind === 'android-app' ? 'app' : kind === 'theme' ? 'theme' : 'game'));
+  const contentId = String(item.contentId || '').trim();
   if (!['rom', 'cover', 'theme', 'android-game', 'android-app', 'launcher'].includes(kind)) throw new ApiError(400, 'invalid_item', 'The item type is not supported.');
   if (!['game', 'app', 'theme', 'update', 'asset'].includes(category)) throw new ApiError(400, 'invalid_category', 'The item category is not supported.');
   const label = String(item.label || upload.filename).trim();
   if (!label || label.length > 140) throw new ApiError(400, 'invalid_label', 'Provide a short item name.');
   const result = {
-    id: upload.id, kind, category, label, objectKey: upload.objectKey,
+    id: kind === 'rom' && /^sha256:[a-f0-9]{64}$/i.test(contentId) ? `rom-${contentId.slice(7).toLowerCase()}` : upload.id,
+    kind, category, label, objectKey: upload.objectKey,
     size: upload.size, sha256: upload.sha256, version: String(item.version || '1'),
     platform: String(item.platform || '').slice(0, 50), visibility: item.visibility === 'public' ? 'public' : 'private',
     requirements: item.requirements && typeof item.requirements === 'object' ? item.requirements : {},
@@ -104,6 +106,7 @@ function validateManifestItem(item, upload, expectedSigner) {
     result.abis = Array.isArray(item.abis) ? item.abis.filter((abi) => ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'].includes(abi)) : [];
   }
   if (kind === 'rom') {
+    if (!/^sha256:[a-f0-9]{64}$/.test(contentId) || contentId.slice(7) !== upload.sha256) throw new ApiError(400, 'invalid_content_id', 'ROM contentId must be sha256:<upload hash>.');
     const localPath = String(item.localPath || '');
     const parts = localPath.split('/');
     if (!localPath.startsWith('/sdcard/roms/') || localPath.length > 240 || parts.some((part) => part === '.' || part === '..' || /[^A-Za-z0-9._ ()-]/.test(part))) throw new ApiError(400, 'invalid_local_path', 'ROM paths must stay inside /sdcard/roms and use safe filename characters.');
@@ -111,6 +114,7 @@ function validateManifestItem(item, upload, expectedSigner) {
     if (!/^\/data\/user\/0\/[A-Za-z0-9_.]+\/cores\/[A-Za-z0-9_-]+\.so$/.test(corePath)) throw new ApiError(400, 'invalid_core_path', 'Choose an installed RetroArch core path in the Android data folder.');
     result.path = localPath;
     result.core_path = corePath;
+    result.contentId = contentId;
     result.coverAssetId = String(item.coverAssetId || '');
     if (result.coverAssetId && !/^[0-9a-f-]{36}$/i.test(result.coverAssetId)) throw new ApiError(400, 'invalid_cover', 'Select a published cover item ID.');
     result.image = String(item.image || '').trim();
@@ -212,6 +216,15 @@ async function publish(env, body) {
     if (item.kind === 'launcher') {
       const installed = [...next.values()].filter((existing) => existing.kind === 'launcher').reduce((highest, existing) => Math.max(highest, Number(existing.versionCode) || 0), 0);
       if (item.versionCode <= installed) throw new ApiError(409, 'invalid_version', 'Launcher version code must be higher than the current release.');
+    }
+    if (item.kind === 'rom') {
+      const existing = [...next.values()].find((candidate) => candidate.kind === 'rom' && candidate.contentId === item.contentId);
+      if (existing) {
+        const immutable = ['size', 'sha256', 'path', 'core_path', 'platform', 'category'];
+        if (immutable.some((field) => String(existing[field] ?? '') !== String(item[field] ?? ''))) throw new ApiError(409, 'content_conflict', 'This ROM contentId already exists with conflicting bytes or runtime metadata.');
+        next.set(existing.id, { ...existing, ...item, id: existing.id, objectKey: existing.objectKey });
+        continue;
+      }
     }
     next.set(item.id, item);
   }

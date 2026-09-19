@@ -34,6 +34,11 @@ function Get-GameMetadataFallback {
         label = $title
         title = $title
         description = [string](Get-MetadataValue -Object $Game -Names @('description','Description'))
+        synopsis = ''
+        synopsisSource = ''
+        metadataStatus = 'pending'
+        metadataSource = 'local-fallback'
+        retrievedAt = ''
         year = Get-MetadataValue -Object $Game -Names @('year','Year','releaseYear')
         tags = @(ConvertTo-MetadataTags (Get-MetadataValue -Object $Game -Names @('tags','Tags','genres')))
         image = [string](Get-MetadataValue -Object $Game -Names @('image','Image','cover','coverUrl','cover_url'))
@@ -45,14 +50,19 @@ function ConvertTo-NormalizedGameMetadata {
     param([Parameter(Mandatory)]$Response, [Parameter(Mandatory)]$Fallback)
     $data = Get-MetadataValue -Object $Response -Names @('data','metadata','game','result')
     if ($null -eq $data) { $data = $Response }
-    $title = Get-MetadataValue -Object $data -Names @('title','name','label')
+    $providerTitle = Get-MetadataValue -Object $data -Names @('title','name','label')
+    $title = $providerTitle
     if ([string]::IsNullOrWhiteSpace([string]$title)) { $title = $Fallback.label }
-    $coverUrl = Get-MetadataValue -Object $data -Names @('coverUrl','cover_url','cover','image','imageUrl','image_url')
+    $providerCoverUrl = Get-MetadataValue -Object $data -Names @('coverUrl','cover_url','cover','image','imageUrl','image_url')
+    $coverUrl = $providerCoverUrl
     if ([string]::IsNullOrWhiteSpace([string]$coverUrl)) { $coverUrl = $Fallback.coverUrl }
     $description = Get-MetadataValue -Object $data -Names @('description','summary','overview')
     if ($null -eq $description) { $description = $Fallback.description }
     $year = Get-MetadataValue -Object $data -Names @('year','releaseYear','release_year')
     if ($null -eq $year) { $year = $Fallback.year }
+    $providerSynopsis = Get-MetadataValue -Object $data -Names @('synopsis','summary','overview','description')
+    $synopsis = if ($null -eq $providerSynopsis) { '' } else { [string]$providerSynopsis }
+    $hasProviderData = -not [string]::IsNullOrWhiteSpace([string]$providerTitle) -or -not [string]::IsNullOrWhiteSpace([string]$providerCoverUrl) -or -not [string]::IsNullOrWhiteSpace([string]$providerSynopsis)
     # Wrap function output so an empty tag collection remains an empty array under StrictMode.
     $tags = @(ConvertTo-MetadataTags (Get-MetadataValue -Object $data -Names @('tags','genres','genre')))
     if ($tags.Count -eq 0) { $tags = $Fallback.tags }
@@ -60,6 +70,11 @@ function ConvertTo-NormalizedGameMetadata {
         label = [string]$title
         title = [string]$title
         description = [string]$description
+        synopsis = [string]$synopsis
+        synopsisSource = if ($hasProviderData) { 'configured-provider' } else { '' }
+        metadataStatus = if ($hasProviderData) { 'verified' } else { 'pending' }
+        metadataSource = if ($hasProviderData) { 'configured-provider' } else { 'local-fallback' }
+        retrievedAt = (Get-Date).ToUniversalTime().ToString('o')
         year = $year
         tags = @($tags)
         image = [string]$coverUrl

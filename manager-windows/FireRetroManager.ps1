@@ -162,6 +162,9 @@ function Add-CatalogMetadata {
         foreach ($property in $game.PSObject.Properties) { $copy[$property.Name] = $property.Value }
         if ([string]::IsNullOrWhiteSpace([string]$copy['label'])) { $copy['label'] = $metadata.label }
         if ([string]::IsNullOrWhiteSpace([string]$copy['description']) -and -not [string]::IsNullOrWhiteSpace([string]$metadata.description)) { $copy['description'] = $metadata.description }
+        if ([string]::IsNullOrWhiteSpace([string]$copy['synopsis']) -and -not [string]::IsNullOrWhiteSpace([string]$metadata.synopsis)) { $copy['synopsis'] = $metadata.synopsis; $copy['synopsisSource'] = $metadata.synopsisSource }
+        $copy['metadataStatus'] = [string]$metadata.metadataStatus
+        $copy['metadataSource'] = [string]$metadata.metadataSource
         if ($null -eq $copy['year'] -and $null -ne $metadata.year) { $copy['year'] = $metadata.year }
         if (@($copy['tags']).Count -eq 0 -and @($metadata.tags).Count -gt 0) { $copy['tags'] = @($metadata.tags) }
         if ([string]::IsNullOrWhiteSpace([string]$copy['image']) -and -not [string]::IsNullOrWhiteSpace([string]$metadata.image)) { $copy['image'] = $metadata.image }
@@ -172,7 +175,7 @@ function Add-CatalogMetadata {
         [pscustomobject]$copy
     })
     Save-GameMetadataCache -Items $metadataItems | Out-Null
-    return $enriched
+    return @($enriched)
 }
 
 function Get-RemoteGameInventory {

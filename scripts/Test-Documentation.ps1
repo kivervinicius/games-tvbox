@@ -1,7 +1,10 @@
 ﻿$ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $missing = @()
-foreach ($file in Get-ChildItem -LiteralPath $root -Recurse -File -Filter *.md) {
+$tracked = & git -C $root ls-files '*.md'
+if ($LASTEXITCODE -ne 0) { throw 'Unable to enumerate tracked documentation.' }
+foreach ($relativePath in $tracked) {
+    $file = Get-Item -LiteralPath (Join-Path $root $relativePath)
     # Internal implementation/review packages can contain diff snippets, not documentation links.
     if ($file.FullName.Substring($root.Length + 1) -match '^\.superpowers[\\/]') { continue }
     $text = Get-Content -LiteralPath $file.FullName -Raw

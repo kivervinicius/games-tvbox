@@ -19,6 +19,13 @@ importer-windows/.packages/
 manager-windows/user-data/
 manager-windows/cache/
 cloudflare/.wrangler/
+/.wrangler/
+/.superdesign/tmp/
+
+# Local screenshots, UI dumps and machine-specific notes
+/*.png
+/*.xml
+docs/ORGANIZACAO-C-KIVER.md
 
 # User game content and saves
 roms/

@@ -10,7 +10,12 @@ foreach ($relative in $required) {
     if (-not (Test-Path -LiteralPath (Join-Path $root $relative))) { throw "Missing public file: $relative" }
 }
 $forbiddenNames = @('sources','device-backups','backups','ps1-chd','crash-extracted','bomberman.chd','ctr.chd','msx.chd','keystore','FireRetroLauncher-debug.apk')
-$files = Get-ChildItem -LiteralPath $root -Recurse -Force -File
+$tracked = & git -C $root ls-files
+if ($LASTEXITCODE -ne 0) { throw 'Unable to enumerate tracked public files.' }
+$files = foreach ($relativePath in $tracked) {
+    $candidate = Join-Path $root $relativePath
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) { Get-Item -LiteralPath $candidate }
+}
 foreach ($file in $files) {
     $relative = $file.FullName.Substring($root.Length + 1)
     foreach ($name in $forbiddenNames) {

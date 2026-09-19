@@ -134,6 +134,7 @@ public class MainActivity extends Activity {
     private final TvNavigationState navigationState = new TvNavigationState();
     private final ControllerInputRouter controllerInputRouter = new ControllerInputRouter();
     private final List<View> gameCardViews = new ArrayList<>();
+    private final List<List<View>> gameCardRows = new ArrayList<>();
     private String lastFocusedGamePath = "";
     private SafeAreaProfile safeAreaProfile = new SafeAreaProfile();
     private LibraryUiState libraryUiState = new LibraryUiState(LibraryUiState.Status.IDLE, 0, "", "", "");
@@ -988,6 +989,7 @@ public class MainActivity extends Activity {
         if (sections == null) return;
         sections.removeAllViews();
         gameCardViews.clear();
+        gameCardRows.clear();
         platformAnchors.clear();
         if ("APPS".equals(selectedPlatform)) { renderAndroidApps(); updateStickyPlatform(0); return; }
         if ("ANDROID".equals(selectedPlatform)) { renderAndroidGames(); updateStickyPlatform(0); return; }
@@ -1024,6 +1026,9 @@ public class MainActivity extends Activity {
                     Game game = gamesForPlatform.get(j);
                     addCard(row, game, allGames.indexOf(game), allGames.indexOf(game) == restoredIndex);
                 }
+                List<View> visualRow = new ArrayList<>();
+                for (int j = 0; j < end - i; j++) visualRow.add(gameCardViews.get(gameCardViews.size() - (end - i) + j));
+                gameCardRows.add(visualRow);
                 for (int j = end; j < i + responsiveColumns; j++) row.addView(new View(this), new LinearLayout.LayoutParams(0, scaled(410), 1f));
             }
             LinearLayout.LayoutParams panelLp = new LinearLayout.LayoutParams(-1, -2);
@@ -1042,16 +1047,19 @@ public class MainActivity extends Activity {
     }
 
     private void configureGameCardFocus() {
-        for (int i = 0; i < gameCardViews.size(); i++) {
-            View card = gameCardViews.get(i);
-            int left = TvFocusCoordinator.nextCard(i, TvFocusCoordinator.LEFT, responsiveColumns, gameCardViews.size());
-            int right = TvFocusCoordinator.nextCard(i, TvFocusCoordinator.RIGHT, responsiveColumns, gameCardViews.size());
-            int up = TvFocusCoordinator.nextCard(i, TvFocusCoordinator.UP, responsiveColumns, gameCardViews.size());
-            int down = TvFocusCoordinator.nextCard(i, TvFocusCoordinator.DOWN, responsiveColumns, gameCardViews.size());
-            card.setNextFocusLeftId(left == TvFocusCoordinator.SIDEBAR ? sidebarFirstId : gameCardViews.get(left).getId());
-            card.setNextFocusRightId(gameCardViews.get(right).getId());
-            card.setNextFocusUpId(gameCardViews.get(up).getId());
-            card.setNextFocusDownId(gameCardViews.get(down).getId());
+        for (int rowIndex = 0; rowIndex < gameCardRows.size(); rowIndex++) {
+            List<View> row = gameCardRows.get(rowIndex);
+            for (int column = 0; column < row.size(); column++) {
+                View card = row.get(column);
+                int left = TvFocusCoordinator.nextVisualColumn(column, row.size(), TvFocusCoordinator.LEFT);
+                int right = TvFocusCoordinator.nextVisualColumn(column, row.size(), TvFocusCoordinator.RIGHT);
+                card.setNextFocusLeftId(left == TvFocusCoordinator.SIDEBAR ? sidebarFirstId : row.get(left).getId());
+                card.setNextFocusRightId(row.get(right).getId());
+                List<View> above = rowIndex == 0 ? row : gameCardRows.get(rowIndex - 1);
+                List<View> below = rowIndex + 1 >= gameCardRows.size() ? row : gameCardRows.get(rowIndex + 1);
+                card.setNextFocusUpId(above.get(Math.min(column, above.size() - 1)).getId());
+                card.setNextFocusDownId(below.get(Math.min(column, below.size() - 1)).getId());
+            }
         }
     }
 

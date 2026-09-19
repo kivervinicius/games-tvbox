@@ -24,4 +24,12 @@ final class TvFocusCoordinator {
         }
         return current;
     }
+
+    /** Horizontal movement must use the rendered row, not the flat catalogue order. */
+    static int nextVisualColumn(int currentColumn, int rowSize, int direction) {
+        if (currentColumn < 0 || currentColumn >= rowSize || rowSize < 1) return currentColumn;
+        if (direction == LEFT) return currentColumn == 0 ? SIDEBAR : currentColumn - 1;
+        if (direction == RIGHT) return currentColumn + 1 >= rowSize ? currentColumn : currentColumn + 1;
+        return currentColumn;
+    }
 }

@@ -13,8 +13,10 @@ $themeCustomizationSource = Join-Path $root 'app\src\main\java\com\kiver\fireret
 $themeTest = Join-Path $PSScriptRoot 'ThemeStateTest.java'
 $themeCatalogSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ThemeCatalog.java'
 $controllerSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ControllerState.java'
+$controllerProfileSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\ControllerProfile.java'
 $themeCatalogTest = Join-Path $PSScriptRoot 'ThemeCatalogTest.java'
 $controllerTest = Join-Path $PSScriptRoot 'ControllerStateTest.java'
+$controllerProfileTest = Join-Path $PSScriptRoot 'ControllerProfileTest.java'
 $endpointSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\RemoteLibraryEndpoint.java'
 $endpointTest = Join-Path $PSScriptRoot 'RemoteLibraryEndpointTest.java'
 $cloudEndpointSource = Join-Path $root 'app\src\main\java\com\kiver\fireretro\CloudApiEndpoint.java'
@@ -50,7 +52,7 @@ if (-not (Test-Path $banner)) { throw 'The widescreen Fire TV banner is missing'
 if (-not (Test-Path $homeIcon)) { throw 'The dedicated Fire TV home icon is missing' }
 if (-not (Test-Path $gamesAsset)) { throw 'Embedded games list is missing' }
 if (-not (Test-Path $buildScript)) { throw 'Repeatable Android build script is missing' }
-if (-not (Test-Path $themeCatalogSource) -or -not (Test-Path $controllerSource) -or -not (Test-Path $endpointSource) -or -not (Test-Path $cloudEndpointSource) -or -not (Test-Path $cloudEndpointTest) -or -not (Test-Path $cloudClientSource) -or -not (Test-Path $cloudSyncSource) -or -not (Test-Path $appEntrySource) -or -not (Test-Path $appSource) -or -not (Test-Path $settingsNavigationSource)) { throw 'Theme, controller, endpoint, Android app and settings navigation sources are missing' }
+if (-not (Test-Path $themeCatalogSource) -or -not (Test-Path $controllerSource) -or -not (Test-Path $controllerProfileSource) -or -not (Test-Path $endpointSource) -or -not (Test-Path $cloudEndpointSource) -or -not (Test-Path $cloudEndpointTest) -or -not (Test-Path $cloudClientSource) -or -not (Test-Path $cloudSyncSource) -or -not (Test-Path $appEntrySource) -or -not (Test-Path $appSource) -or -not (Test-Path $settingsNavigationSource)) { throw 'Theme, controller, endpoint, Android app and settings navigation sources are missing' }
 & pwsh -NoProfile -File $catalogTest
 if ($LASTEXITCODE -ne 0) { throw 'Catalog store contract failed' }
 $buildScriptText = Get-Content $buildScript -Raw
@@ -73,7 +75,7 @@ if ($buildScriptText -notmatch [regex]::Escape('ThemeState.java')) { throw 'Buil
 $javaRoot = 'C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2024.1.4\jbr'
 $testBuild = Join-Path $PSScriptRoot '.build'
 New-Item -ItemType Directory -Force -Path $testBuild | Out-Null
-& (Join-Path $javaRoot 'bin\javac.exe') -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest
+& (Join-Path $javaRoot 'bin\javac.exe') -encoding UTF-8 --release 8 -proc:none -d $testBuild $stateSource $stateTest $themeSource $themeTest $themeCustomizationSource $themeCatalogSource $themeCatalogTest $controllerSource $controllerProfileSource $controllerTest $controllerProfileTest $endpointSource $endpointTest $cloudEndpointSource $cloudEndpointTest $appEntrySource $appEntryTest $appSource $appSourceTest $settingsNavigationSource $settingsNavigationTest $navigationSource $navigationTest $inputRouterSource $inputRouterTest $focusCoordinatorSource $focusCoordinatorTest $stateThrottleSource $stateThrottleTest $safeAreaSource $safeAreaTest $libraryUiSource $libraryUiTest $themeProfileSource $themeProfileTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior did not compile' }
 & (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.LauncherStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Launcher state behavior failed' }
@@ -83,6 +85,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Theme state behavior failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Theme catalog behavior failed' }
 & (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerStateTest
 if ($LASTEXITCODE -ne 0) { throw 'Controller state behavior failed' }
+& (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.ControllerProfileTest
+if ($LASTEXITCODE -ne 0) { throw 'Controller profile behavior failed' }
 & (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.RemoteLibraryEndpointTest
 if ($LASTEXITCODE -ne 0) { throw 'Remote library endpoint behavior failed' }
 & (Join-Path $javaRoot 'bin\java.exe') -cp $testBuild com.kiver.fireretro.CloudApiEndpointTest

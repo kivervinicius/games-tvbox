@@ -24,6 +24,7 @@ final class ControllerProfile {
         return config.contains("input_player1_analog_dpad_mode = \"3\"")
                 && config.contains("input_menu_toggle_gamepad_combo = \"7\"")
                 && config.contains("input_quit_gamepad_combo = \"4\"")
+                && config.contains("input_exit_emulator_btn = \"nul\"")
                 && config.contains("quit_press_twice = \"false\"");
     }
 
@@ -33,6 +34,10 @@ final class ControllerProfile {
         required.put("input_player1_analog_dpad_mode", "3");
         required.put("input_menu_toggle_gamepad_combo", "7");
         required.put("input_quit_gamepad_combo", "4");
+        required.put("input_exit_emulator", "nul");
+        required.put("input_exit_emulator_axis", "nul");
+        required.put("input_exit_emulator_btn", "nul");
+        required.put("input_exit_emulator_mbtn", "nul");
         required.put("quit_press_twice", "false");
         Set<String> applied = new HashSet<>();
         StringBuilder result = new StringBuilder();

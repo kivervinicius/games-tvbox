@@ -2,14 +2,14 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Persistent Resumable Download Manager and Fault Simulation Suite completed and verified
+- Entry: Multi-Platform Intake Pipeline, Canonical Content Identity, and Atomic Cloud Publication completed and verified
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: importer-windows/src/JogosRetro.Downloads/*, importer-windows/tests/JogosRetroImporter.Tests/HttpFaultServer.cs, importer-windows/tests/JogosRetroImporter.Tests/Program.cs
-- Verified: All 7 fault simulation scenarios executed and passed on Linux, DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
-- Next context: Multi-Platform Intake Pipeline (PS1 CHD conversion, Cartridge passthrough, archive extraction security)
+- Changed: importer-windows/src/JogosRetroImporter.Core/IPlatformImportStrategy.cs, PlatformStrategies.cs, ArchiveExtractor.cs, ImportPipeline.cs, PlatformRegistry.cs, CloudPublisherClient.cs, tests/Program.cs
+- Verified: 100% of Importer suite passed on Linux, DEV gates passed (`orquestrador-maestro check-dev-gates --strict`)
+- Next context: Avalonia cross-platform desktop UI (`JogosRetro.Desktop`) and final verification report
 
 ## Latest Work
-Implementado o módulo `JogosRetro.Downloads` (`DownloadJob`, `DownloadState`, `DownloadManager`, `JsonDownloadRepository`) com suporte a probe de HTTP Range (`206 Partial Content`), continuação de downloads a partir de arquivos `.part`, renovação automática de tickets expirados (HTTP 403/410) via `IGameSourceProvider`, retry com backoff exponencial e jitter para falhas de rede transitórias, verificação estrita de hash SHA-256 e controle seguro de pausa e retoma. Criado o servidor de simulação de falhas HTTP (`HttpFaultServer`) cobrindo 7 cenários reais de borda.
+Implementado o motor de ingestão multi-plataforma (`IPlatformImportStrategy`) com suporte a PlayStation (conversão CHD e verificação) e sistemas de cartucho (NES, SNES, Mega Drive e GBA com validação e passthrough). Fortalecido o `ArchiveExtractor` com proteções contra Zip Bomb (limite de 4 GB descompactado) e Zip Slip (rejeição estrita de travessia de diretório). Estabelecida a separação e persistência de `canonicalArtifactSha256` e `sourceArtifactSha256` com `contentId = sha256:...`. Atualizado o `CloudPublisherClient` para publicação atômica multi-ativo (R2 cover + R2 ROM + commit único no catálogo).
 
 ## Recent Entries
 - 2026-09-19: Multi-Device Gaming Architecture and Acceptance Scenarios completed and verified.

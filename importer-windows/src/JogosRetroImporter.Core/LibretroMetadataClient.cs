@@ -1,6 +1,16 @@
 namespace JogosRetroImporter.Core;
 
-public sealed record GameMetadata(string Title, string Region, GamePlatform Platform, string CoverPath, int Confidence);
+public sealed record GameMetadata(
+    string Title,
+    string Region,
+    GamePlatform Platform,
+    string CoverPath,
+    int Confidence,
+    string? Publisher = null,
+    string? Developer = null,
+    int? Year = null,
+    string? Description = null
+);
 
 public sealed class LibretroMetadataClient(HttpClient? http = null)
 {

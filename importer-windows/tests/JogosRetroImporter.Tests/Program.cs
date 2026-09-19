@@ -24,7 +24,10 @@ try
     Assert(PlatformDetector.Detect("game.gba") == GamePlatform.GameBoyAdvance, "GBA detection failed");
 
     Assert(PlatformRegistry.IsPipelineSupported("ps1"), "PS1 pipeline must be supported");
-    Assert(!PlatformRegistry.IsPipelineSupported("snes"), "SNES pipeline is currently planned, not supported");
+    Assert(PlatformRegistry.IsPipelineSupported("snes"), "SNES pipeline is now supported");
+    Assert(PlatformRegistry.IsPipelineSupported("nes"), "NES pipeline is now supported");
+    Assert(PlatformRegistry.IsPipelineSupported("megadrive"), "Mega Drive pipeline is now supported");
+    Assert(PlatformRegistry.IsPipelineSupported("gba"), "GBA pipeline is now supported");
     Assert(PlatformRegistry.FindByExtension("game.cue")?.Id == "ps1", "CUE resolves to ps1");
     Assert(PlatformRegistry.FindByExtension("mario.smc")?.Id == "snes", "SMC resolves to snes");
     Assert(PlatformRegistry.FindById("playstation")?.Id == "ps1", "FindById supports display name or id");
@@ -361,7 +364,86 @@ try
     Assert(File.Exists(job7.DestinationPath), "Job7 destination file missing");
     Assert(await FileHash.Sha256Async(job7.DestinationPath) == slowSha, "Job7 SHA256 mismatch");
 
-    Console.WriteLine("PASS: importer core preserves originals, validates PlayStation input, runs cross-platform abstractions, verifies Retrostic resolvers and provider, and passes download fault simulation (including pause/resume)");
+    // ----------------------------------------------------
+    // Multi-Platform Intake Pipeline & Canonical Artifacts Tests
+    // ----------------------------------------------------
+    var pipeline = new ImportPipeline("chdman_dummy", root);
+
+    // NES Cartridge Intake
+    var nesFile = Path.Combine(root, "Super Mario Bros (USA).nes");
+    await File.WriteAllBytesAsync(nesFile, new byte[4096]);
+    var preparedNes = await pipeline.ProcessAsync(nesFile, "nes");
+    Assert(preparedNes.PlatformId == "nes", "PlatformId should be nes");
+    Assert(File.Exists(preparedNes.FinalFile), "NES final canonical ROM should exist");
+    Assert(preparedNes.CanonicalSha256 != null, "CanonicalSha256 must be populated");
+    Assert(preparedNes.ContentId == $"sha256:{preparedNes.CanonicalSha256!.ToLowerInvariant()}", "ContentId must be sha256:canonical");
+    Assert(preparedNes.OriginalSha256 == await FileHash.Sha256Async(nesFile), "OriginalSha256 mismatch");
+
+    // SNES Cartridge Intake with Auto-Detection
+    var snesFile = Path.Combine(root, "Super Mario World (USA).sfc");
+    await File.WriteAllBytesAsync(snesFile, new byte[8192]);
+    var preparedSnes = await pipeline.ProcessAsync(snesFile);
+    Assert(preparedSnes.PlatformId == "snes", "Auto-detected PlatformId should be snes");
+    Assert(File.Exists(preparedSnes.FinalFile), "SNES final canonical ROM should exist");
+    Assert(preparedSnes.ContentId.StartsWith("sha256:"), "SNES ContentId invalid");
+
+    // Mega Drive Cartridge Intake
+    var mdFile = Path.Combine(root, "Sonic The Hedgehog (USA).md");
+    await File.WriteAllBytesAsync(mdFile, new byte[8192]);
+    var preparedMd = await pipeline.ProcessAsync(mdFile, "megadrive");
+    Assert(preparedMd.PlatformId == "megadrive", "Mega Drive platform mismatch");
+    Assert(File.Exists(preparedMd.FinalFile), "Mega Drive final ROM should exist");
+
+    // GBA Cartridge Intake
+    var gbaFile = Path.Combine(root, "Pokemon Emerald (USA).gba");
+    await File.WriteAllBytesAsync(gbaFile, new byte[16384]);
+    var preparedGba = await pipeline.ProcessAsync(gbaFile, "gba");
+    Assert(preparedGba.PlatformId == "gba", "GBA platform mismatch");
+    Assert(File.Exists(preparedGba.FinalFile), "GBA final ROM should exist");
+
+    // ----------------------------------------------------
+    // Cloud Atomic Publication Test
+    // ----------------------------------------------------
+    var coverFile = Path.Combine(root, "cover.jpg");
+    await File.WriteAllBytesAsync(coverFile, new byte[512]);
+
+    var pubHandler = new TestHttpMessageHandler(req =>
+    {
+        var uri = req.RequestUri?.ToString() ?? "";
+        if (req.Method == HttpMethod.Post && uri.EndsWith("/api/importer/uploads"))
+        {
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"uploadId\":\"up_test_123\",\"uploadUrl\":\"https://mock-r2.jogosretro.dev/put\"}", System.Text.Encoding.UTF8, "application/json")
+            };
+        }
+        if (req.Method == HttpMethod.Put && uri.Contains("mock-r2"))
+        {
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+        }
+        if (req.Method == HttpMethod.Post && uri.Contains("/finalize"))
+        {
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"status\":\"finalized\"}", System.Text.Encoding.UTF8, "application/json")
+            };
+        }
+        if (req.Method == HttpMethod.Post && uri.EndsWith("/api/importer/publications"))
+        {
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"revision\":\"rev_abc987\",\"itemCount\":1,\"updatedAt\":\"2026-09-19T12:00:00Z\"}", System.Text.Encoding.UTF8, "application/json")
+            };
+        }
+        return new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
+    });
+
+    var pubClient = new CloudPublisherClient("https://mock-cloud.jogosretro.dev/", new HttpClient(pubHandler));
+    var pubResult = await pubClient.PublishGameAsync("test_token_123", preparedGba, coverFile);
+    Assert(pubResult.Revision == "rev_abc987", "Publication revision mismatch");
+    Assert(pubResult.ItemCount == 1, "Publication item count mismatch");
+
+    Console.WriteLine("PASS: importer core preserves originals, validates PlayStation input, runs cross-platform abstractions, verifies Retrostic resolvers and provider, passes download fault simulation, verifies multi-platform canonical intake, and tests atomic cloud publication");
 }
 finally { try { Directory.Delete(root, true); } catch { } }
 

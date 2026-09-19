@@ -2,7 +2,7 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: JogosRetro.Downloads, DownloadManager, JsonDownloadRepository, HttpFaultServer (200, 206 Range, Range ignored, 403 renew, 500 retry, SHA256 mismatch, Pause/Resume)
+- Scope: Multi-Platform Intake Pipeline (PS1, NES, SNES, Mega Drive, GBA), Canonical Artifact ContentId, ArchiveExtractor hardening, and Atomic Cloud Publication
 
 ## Commands
 - `export PATH="$HOME/.dotnet:$PATH" && dotnet run --project importer-windows/tests/JogosRetroImporter.Tests/JogosRetroImporter.Tests.csproj`

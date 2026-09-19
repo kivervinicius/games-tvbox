@@ -1,6 +1,10 @@
 # Worklog — Games TV Box Gaming Platform
 
-## 2026-09-19 - Implement Persistent Resumable Download Manager with Fault Simulation
+## 2026-09-19 - Implement Multi-Platform Intake, Canonical Identity, and Atomic Publication
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Enhanced `ArchiveExtractor.cs` with zip bomb (4GB max uncompressed) and path traversal protections. Created `IPlatformImportStrategy` and implementations (`PlayStationImportStrategy` for CUE/BIN/ISO/CHD with chdman conversion and verification; `CartridgeImportStrategy` for NES, SNES, Mega Drive, GBA with ROM validation and passthrough). Added `CanonicalSha256` and `ContentId` (`sha256:{canonicalSha}`) to `PreparedGame`. Updated `PlatformRegistry` enabling Supported status for SNES, NES, Mega Drive, and GBA. Extended `CloudPublisherClient.PublishGameAsync` with transactional multi-asset publication (R2 cover upload + R2 ROM upload + single atomic catalog commit).
+- Verified: All assertions in `JogosRetroImporter.Tests` executed and passed on Linux. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).
+- Next context: Avalonia cross-platform desktop UI (`JogosRetro.Desktop`) and final verification report.
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Created `JogosRetro.Downloads` library (`DownloadJob`, `DownloadState`, `DownloadProgressSnapshot`, `IDownloadRepository`, `JsonDownloadRepository`, `DownloadManager`). Implemented HTTP Range probing (`206 Partial Content`), persistent state saving (`downloads.json`), `.part` stream resumption, automatic 403/410 expired ticket renewal via `IGameSourceProvider`, exponential backoff retry with jitter, SHA-256 integrity verification, and thread-safe pause/resume controls. Built `HttpFaultServer` simulating 200, 206, server ignoring Range, 403 ticket expiry, 500 transient errors, checksum tampering, and pause/resume lifecycle.
 - Verified: All 7 fault simulation scenarios in `JogosRetroImporter.Tests` executed and passed on Linux. DEV gates passed (`orquestrador-maestro check-dev-gates --strict`).

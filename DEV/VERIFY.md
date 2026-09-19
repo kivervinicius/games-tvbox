@@ -2,12 +2,13 @@
 
 ## Latest Verification
 - Date: 2026-09-19
-- Scope: P0.2 Content-addressed identity and idempotent publication; P0.3 TransactionCoordinator, atomic quota, and audit logging
+- Scope: Canonical PlatformRegistry schema and CompatibilityEngine (storage, ABI, API level, input modal fallback, catalog filtering)
 
 ## Commands
 - `node --test cloudflare/tests/*.test.mjs`
 
 ## Outcome
-- Passed: 36 Cloudflare tests passed (0 failures), covering contentId sha256 formatting, structured R2 blob keys, idempotent publication updates, atomic quota tracking without full R2 scan, audit logging without secrets, and scope validation.
+- Passed: 42 Cloudflare tests passed (0 failures), verifying platform discovery by id/extension/name, compatibility checks against memory/ABI/API constraints, input fallback evaluation, and catalog filtering with compatibility status.
 - Failed: 0
-- Pending: PlatformRegistry, CompatibilityEngine, and Android Core Abstractions.
+- Pending: Android Core Abstractions (Storage strategies, Input manager/actions, Emulator providers).
+

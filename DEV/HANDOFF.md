@@ -2,16 +2,17 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: P0.2 and P0.3 implemented and verified
+- Entry: Platform Registry and Compatibility Engine implemented and verified
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: admin-api.mjs, coordinator.mjs, index.mjs, wrangler.toml, test suites
-- Verified: 36 Cloudflare tests passed
-- Next context: Proceeding to canonical PlatformRegistry and Device Capabilities / CompatibilityEngine
+- Changed: shared/platform-registry.json, cloudflare/worker/src/compatibility.mjs, cloudflare/tests/compatibility.test.mjs
+- Verified: 42 Cloudflare tests passed
+- Next context: Implementing Android Core Abstractions (Storage strategies, Input manager/actions, Emulator providers)
 
 ## Latest Work
-Restaurada a identidade canônica orientada a conteúdo por SHA-256 (`contentId = sha256:...`) e o particionamento de blobs no R2 (`blobs/sha256/prefix/hash`). Implementado o coordenador transacional com Durable Objects e SQLite (`LibraryCoordinator`) com rastreamento atômico de cota sem varreduras pesadas, publicação idempotente sem duplicação de cards e registro seguro de eventos de auditoria.
+Criado o `shared/platform-registry.json` canônico contendo todas as plataformas (PS1, N64, SNES, NES, Mega Drive, GBA, Android Native Apps/Games), com perfis de emulador RetroArch (32/64 bit), cores recomendados e requisitos mínimos. Implementado o `CompatibilityEngine` em `cloudflare/worker/src/compatibility.mjs` com validação de limites de armazenamento, nível de API Android, compatibilidade de ABI nativa e fallback de modalidades de input (gamepad, dpad, touch).
 
 ## Recent Entries
+- 2026-09-19: Platform Registry and Compatibility Engine implemented and verified.
 - 2026-09-19: P0.2 and P0.3 content identity, idempotent publication, and transactional coordinator.
 - 2026-09-19: P0.1 pairing security fix, admin scope enforcement and tests.
 - 2026-09-19: Baseline real audit, facts ledger, risk register, migration plan and 10 ADRs established.

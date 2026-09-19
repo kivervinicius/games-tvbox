@@ -1,0 +1,135 @@
+{
+  "$schema": "https://games-tvbox.kiver.dev/schemas/platform-registry-v1.json",
+  "schemaVersion": 1,
+  "platforms": [
+    {
+      "id": "nes",
+      "displayName": "NES",
+      "category": "cartridge",
+      "extensions": [".nes", ".zip", ".7z"],
+      "preferredFormat": ".nes",
+      "remoteDirectory": "nes",
+      "emulator": "retroarch",
+      "coreCandidates": {
+        "arm64-v8a": ["fceumm_libretro_android.so", "nestopia_libretro_android.so"],
+        "armeabi-v7a": ["fceumm_libretro_android.so", "nestopia_libretro_android.so"],
+        "x86_64": ["fceumm_libretro_android.so"]
+      },
+      "metadataProviders": ["libretro"],
+      "runtimeRequirements": {
+        "minRamMb": 256,
+        "input": ["dpad", "gamepad", "touch"]
+      }
+    },
+    {
+      "id": "snes",
+      "displayName": "SNES",
+      "category": "cartridge",
+      "extensions": [".sfc", ".smc", ".zip", ".7z"],
+      "preferredFormat": ".sfc",
+      "remoteDirectory": "snes",
+      "emulator": "retroarch",
+      "coreCandidates": {
+        "arm64-v8a": ["snes9x_libretro_android.so", "snes9x2010_libretro_android.so"],
+        "armeabi-v7a": ["snes9x2010_libretro_android.so", "snes9x_libretro_android.so"],
+        "x86_64": ["snes9x_libretro_android.so"]
+      },
+      "metadataProviders": ["libretro"],
+      "runtimeRequirements": {
+        "minRamMb": 256,
+        "input": ["dpad", "gamepad", "touch"]
+      }
+    },
+    {
+      "id": "megadrive",
+      "displayName": "Mega Drive",
+      "category": "cartridge",
+      "extensions": [".md", ".bin", ".gen", ".smd", ".zip", ".7z"],
+      "preferredFormat": ".md",
+      "remoteDirectory": "megadrive",
+      "emulator": "retroarch",
+      "coreCandidates": {
+        "arm64-v8a": ["genesis_plus_gx_libretro_android.so", "picodrive_libretro_android.so"],
+        "armeabi-v7a": ["genesis_plus_gx_libretro_android.so", "picodrive_libretro_android.so"],
+        "x86_64": ["genesis_plus_gx_libretro_android.so"]
+      },
+      "metadataProviders": ["libretro"],
+      "runtimeRequirements": {
+        "minRamMb": 256,
+        "input": ["dpad", "gamepad", "touch"]
+      }
+    },
+    {
+      "id": "gba",
+      "displayName": "Game Boy Advance",
+      "category": "cartridge",
+      "extensions": [".gba", ".zip", ".7z"],
+      "preferredFormat": ".gba",
+      "remoteDirectory": "gba",
+      "emulator": "retroarch",
+      "coreCandidates": {
+        "arm64-v8a": ["mgba_libretro_android.so", "vba_next_libretro_android.so"],
+        "armeabi-v7a": ["mgba_libretro_android.so", "vba_next_libretro_android.so"],
+        "x86_64": ["mgba_libretro_android.so"]
+      },
+      "metadataProviders": ["libretro"],
+      "runtimeRequirements": {
+        "minRamMb": 256,
+        "input": ["dpad", "gamepad", "touch"]
+      }
+    },
+    {
+      "id": "playstation",
+      "displayName": "PlayStation",
+      "category": "disc",
+      "extensions": [".chd", ".cue", ".bin", ".iso", ".pbp", ".ecm", ".ape"],
+      "preferredFormat": ".chd",
+      "remoteDirectory": "psx",
+      "emulator": "retroarch",
+      "coreCandidates": {
+        "arm64-v8a": ["pcsx_rearmed_libretro_android.so", "swanstation_libretro_android.so"],
+        "armeabi-v7a": ["pcsx_rearmed_libretro_android.so"],
+        "x86_64": ["pcsx_rearmed_libretro_android.so"]
+      },
+      "metadataProviders": ["libretro"],
+      "runtimeRequirements": {
+        "minRamMb": 512,
+        "input": ["gamepad", "dpad", "touch"]
+      }
+    },
+    {
+      "id": "n64",
+      "displayName": "Nintendo 64",
+      "category": "cartridge",
+      "extensions": [".z64", ".n64", ".v64", ".zip", ".7z"],
+      "preferredFormat": ".z64",
+      "remoteDirectory": "n64",
+      "emulator": "retroarch",
+      "coreCandidates": {
+        "arm64-v8a": ["mupen64plus_next_libretro_android.so"],
+        "armeabi-v7a": ["mupen64plus_next_libretro_android.so"],
+        "x86_64": ["mupen64plus_next_libretro_android.so"]
+      },
+      "metadataProviders": ["libretro"],
+      "runtimeRequirements": {
+        "minRamMb": 1024,
+        "input": ["gamepad", "dpad"]
+      }
+    },
+    {
+      "id": "android",
+      "displayName": "Android",
+      "category": "native",
+      "extensions": [".apk"],
+      "preferredFormat": ".apk",
+      "remoteDirectory": "apps",
+      "emulator": "native",
+      "coreCandidates": {},
+      "metadataProviders": ["manifest"],
+      "runtimeRequirements": {
+        "minRamMb": 1024,
+        "input": ["gamepad", "touch", "dpad"]
+      }
+    }
+  ]
+}

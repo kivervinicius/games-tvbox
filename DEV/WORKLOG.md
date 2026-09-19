@@ -68,3 +68,9 @@
 - Changed: Created CURRENT_STATE.md, TARGET_STATE.md, MIGRATION_PLAN.md, RISK_REGISTER.md, FACTS_LEDGER.md, ADR-001..010
 - Verified: Ran Cloudflare node tests (30/30), Java tests (17/17), Importer tests and PowerShell syntax tests
 - Next context: Proceeding to P0.1 pairing security fix and scope enforcement
+
+## 2026-09-19 - Android Universal Gaming foundation (strangler, no MainActivity edits)
+- Spec: mission universal-gaming; base feature/cloud-admin @ 5812d13 (8 commits ahead of 068bf51, revalidated); branch feat/android-universal-gaming-redesign
+- Changed: new Platform/ExperienceMode/DeviceCapabilities/DeviceProfileEngine, AccessibleColorResolver, RetroArchCoreCatalog, AnalogInputFilter, AppManagedStorageStrategy; extended GameAction/PAGE_*, InputManager SELECT/PAGE, ControllerInputRouter analog, EmulatorProvider defaults, RetroArchProvider selectBest/isAvailable/coreId, RomStorageResolver.withAppManaged, CatalogStore cloudId merge, FLAG_IMMUTABLE, manifest gamepad+television; 6 new test suites + ThemeCustomizationTest wired + 2 harness guards
+- Verified: pwsh tests/project.tests.ps1 23/23 PASS exit 0; Gradle assemble blocked (Java 11 vs AGP 17, no SDK) recorded as FACT-A015
+- Next context: shell scaffolding (Tv/Gamer), Activity wiring, SAF, emulator matrix; commits intentionally uncommitted per rules.md #1

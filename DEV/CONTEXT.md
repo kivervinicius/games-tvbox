@@ -21,4 +21,4 @@
 - Proteger segredos em logs e auditoria.
 
 ## Next Context
-Implementação das correções de segurança P0: P0.1 (fechamento do bypass de pareamento), P0.2 (identidade canônica e idempotência de publicação) e P0.3 (coordenador transacional e contadores de cota).
+Tv/Gamer shell scaffolding, MainActivity wiring, SAF storage strategy, and emulator/device matrix on branch feat/android-universal-gaming-redesign. Foundation (engine, contrast guard, coreId runtime, analog input, app-managed storage, PendingIntent fix) implemented and verified 23/23; changes uncommitted per rules.md #1.

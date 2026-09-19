@@ -1,5 +1,7 @@
 package com.kiver.fireretro;
 
+import java.util.Set;
+
 public final class RetroArchProvider implements EmulatorProvider {
     public static final String PACKAGE_RA32 = "com.retroarch.ra32";
     public static final String PACKAGE_RA64 = "com.retroarch.a64";
@@ -31,6 +33,37 @@ public final class RetroArchProvider implements EmulatorProvider {
             return new RetroArchProvider(PACKAGE_RA64);
         }
         return new RetroArchProvider(PACKAGE_RA32);
+    }
+
+    /**
+     * Selects the best installed runtime: standard package first, then the
+     * ABI-matched split package. Falls back to the ABI rule when nothing is
+     * installed so legacy callers keep working.
+     */
+    public static RetroArchProvider selectBest(String abi, Set<String> installedPackages) {
+        if (installedPackages != null) {
+            if (installedPackages.contains(PACKAGE_STANDARD)) {
+                return new RetroArchProvider(PACKAGE_STANDARD);
+            }
+            if (installedPackages.contains(PACKAGE_RA64)
+                    && ("arm64-v8a".equalsIgnoreCase(abi) || "x86_64".equalsIgnoreCase(abi))) {
+                return new RetroArchProvider(PACKAGE_RA64);
+            }
+            if (installedPackages.contains(PACKAGE_RA32)) {
+                return new RetroArchProvider(PACKAGE_RA32);
+            }
+        }
+        return forAbi(abi);
+    }
+
+    /** Pure check against a PackageManager-derived set; MainActivity passes the live set. */
+    public boolean isAvailable(Set<String> installedPackages) {
+        return installedPackages != null && installedPackages.contains(packageName);
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return true;
     }
 
     @Override
@@ -69,13 +102,22 @@ public final class RetroArchProvider implements EmulatorProvider {
         if (coreFileName == null || coreFileName.trim().isEmpty()) {
             return null;
         }
-        if (coreFileName.startsWith("/")) {
-            return coreFileName;
+        String name = coreFileName.trim();
+        if (name.startsWith("/")) {
+            return name;
+        }
+        if (!name.toLowerCase().endsWith(".so") && RetroArchCoreCatalog.isKnownCoreId(name)) {
+            name = RetroArchCoreCatalog.coreFileNameFor(name);
         }
         String base = getDefaultCoresDirectory();
         if (!base.endsWith("/")) {
             base += "/";
         }
-        return base + coreFileName;
+        return base + name;
+    }
+
+    @Override
+    public String resolveCoreId(String corePath) {
+        return RetroArchCoreCatalog.parseCoreId(corePath);
     }
 }

@@ -24,6 +24,8 @@ public final class InputManager {
     public static final int KEYCODE_BUTTON_R2 = 105;
     public static final int KEYCODE_BUTTON_START = 108;
     public static final int KEYCODE_BUTTON_SELECT = 109;
+    public static final int KEYCODE_PAGE_UP = 92;
+    public static final int KEYCODE_PAGE_DOWN = 93;
 
     public static final int ACTION_DOWN = 0;
     public static final int ACTION_UP = 1;
@@ -87,6 +89,7 @@ public final class InputManager {
                 return GameAction.SEARCH;
 
             case KEYCODE_MENU:
+            case KEYCODE_BUTTON_SELECT:
                 return GameAction.MENU;
 
             case KEYCODE_BUTTON_START:
@@ -96,6 +99,11 @@ public final class InputManager {
                 return GameAction.TAB_PREV;
             case KEYCODE_BUTTON_R1:
                 return GameAction.TAB_NEXT;
+
+            case KEYCODE_PAGE_UP:
+                return GameAction.PAGE_PREVIOUS;
+            case KEYCODE_PAGE_DOWN:
+                return GameAction.PAGE_NEXT;
 
             default:
                 return null;

@@ -45,6 +45,28 @@ public final class RomStorageResolver {
         }
     }
 
+    /**
+     * Strangler path: app-managed (scoped) storage first, then removable/USB,
+     * then legacy. Existing installs keep resolving because resolveRomFile
+     * checks existence across every strategy before falling back to primary.
+     */
+    public static RomStorageResolver withAppManaged(File appExternalDir, File removableRoot) {
+        java.util.List<RomStorageStrategy> list = new java.util.ArrayList<>();
+        if (appExternalDir != null) {
+            list.add(new AppManagedStorageStrategy(appExternalDir));
+        }
+        if (removableRoot != null) {
+            String name = removableRoot.getName().toLowerCase();
+            if (name.contains("usb") || name.contains("otg")) {
+                list.add(new UsbStorageStrategy(removableRoot));
+            } else {
+                list.add(new RemovableStorageStrategy(removableRoot));
+            }
+        }
+        list.add(new LegacyExternalStorageStrategy());
+        return new RomStorageResolver(list);
+    }
+
     public List<RomStorageStrategy> getStrategies() {
         return strategies;
     }

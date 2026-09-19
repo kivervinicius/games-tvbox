@@ -17,6 +17,7 @@ final class ControllerInputRouter {
     }
 
     private final Map<String, Press> presses = new HashMap<>();
+    private final AnalogInputFilter analogFilter = new AnalogInputFilter();
 
     boolean shouldMove(int deviceId, int direction, int action, int repeatCount, long eventTimeMs) {
         String key = deviceId + ":" + direction;
@@ -37,5 +38,18 @@ final class ControllerInputRouter {
         if (eventTimeMs - press.lastAcceptedAt < REPEAT_INTERVAL_MS) return false;
         press.lastAcceptedAt = eventTimeMs;
         return true;
+    }
+
+    /**
+     * Analog-stick entry point. Resolves axes to a direction with deadzone
+     * handling and applies hold/repeat cadence shared with D-pad timings.
+     */
+    GameAction shouldMoveAnalog(int deviceId, float axisX, float axisY, long eventTimeMs) {
+        GameAction direction = AnalogInputFilter.directionForAxes(axisX, axisY);
+        if (direction == null) {
+            analogFilter.releaseAll(deviceId);
+            return null;
+        }
+        return analogFilter.shouldEmit(deviceId, direction, eventTimeMs) ? direction : null;
     }
 }

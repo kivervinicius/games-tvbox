@@ -12,5 +12,7 @@ public enum GameAction {
     FAVORITE,
     QUICK_SETTINGS,
     TAB_PREV,
-    TAB_NEXT
+    TAB_NEXT,
+    PAGE_PREVIOUS,
+    PAGE_NEXT
 }

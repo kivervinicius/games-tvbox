@@ -49,10 +49,22 @@ public final class CatalogStore {
     }
 
     static List<CatalogGame> merge(List<CatalogGame> bundled, List<CatalogGame> external) {
-        Map<String, CatalogGame> byPath = new LinkedHashMap<>();
-        for (CatalogGame game : bundled) if (game != null && !game.path.trim().isEmpty()) byPath.put(game.path, game);
-        for (CatalogGame game : external) if (game != null && !game.path.trim().isEmpty()) byPath.put(game.path, game);
-        return new ArrayList<>(byPath.values());
+        Map<String, CatalogGame> byIdentity = new LinkedHashMap<>();
+        for (CatalogGame game : bundled) if (game != null && !game.path.trim().isEmpty()) byIdentity.put(identityOf(game), game);
+        for (CatalogGame game : external) if (game != null && !game.path.trim().isEmpty()) byIdentity.put(identityOf(game), game);
+        return new ArrayList<>(byIdentity.values());
+    }
+
+    /**
+     * Stable identity migration: cloudId when present, physical path as
+     * legacy fallback. Path-only entries behave exactly as before; entries
+     * sharing a cloudId dedupe across remapped storage roots.
+     */
+    static String identityOf(CatalogGame game) {
+        if (game.cloudId != null && !game.cloudId.trim().isEmpty()) {
+            return "id:" + game.cloudId.trim();
+        }
+        return "path:" + game.path;
     }
 
     private static List<CatalogGame> parse(BufferedReader reader) throws Exception {

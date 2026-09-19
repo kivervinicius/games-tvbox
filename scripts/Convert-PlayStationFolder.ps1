@@ -20,6 +20,11 @@ foreach ($source in Get-ChildItem -LiteralPath $InputFolder -File | Where-Object
             if ([string]::IsNullOrWhiteSpace($EcmTool) -or -not (Test-Path -LiteralPath $EcmTool)) { throw 'ECM_TOOL_REQUIRED: instale/repare unecm.exe para processar BIN.ECM.' }
             & $EcmTool $ecm.FullName | Out-Null
             if ($LASTEXITCODE -ne 0) { throw 'unecm.exe falhou.' }
+            $decodedBin = Get-ChildItem -LiteralPath $job -Recurse -File -Filter '*.bin' | Select-Object -First 1
+            if ($decodedBin) {
+                $generatedCue = Join-Path $decodedBin.DirectoryName ($decodedBin.BaseName + '.cue')
+                [IO.File]::WriteAllLines($generatedCue, @("FILE `"$($decodedBin.Name)`" BINARY", '  TRACK 01 MODE2/2352', '    INDEX 01 00:00:00'), [Text.Encoding]::ASCII)
+            }
         }
         $cue = Get-ChildItem $job -Recurse -File -Filter '*.cue' | Select-Object -First 1
         $iso = Get-ChildItem $job -Recurse -File -Filter '*.iso' | Select-Object -First 1

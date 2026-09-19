@@ -2,16 +2,17 @@
 
 ## Snapshot
 - Updated: 2026-09-19
-- Entry: Importer PlatformRegistry, Gradle build flavors, and AndroidManifest relaxed
+- Entry: Cloud Control Plane (Device groups, Release channels, Assignments) implemented and verified
 - Spec: DEV/SPECS/ACTIVE.md
-- Changed: AndroidManifest.xml, settings.gradle, build.gradle, app/build.gradle, MainActivity.java, JogosRetroImporter.Core, JogosRetroImporter Form1, tests
-- Verified: Android 21/21 tests passed; Importer tests passed; PowerShell tests passed; Cloudflare 42/42 passed
-- Next context: Cloudflare Control Plane enhancement (Device groups, Release channels) and Final Acceptance verification
+- Changed: cloudflare/worker/src/admin-api.mjs, cloudflare/tests/admin-control-plane.test.mjs
+- Verified: 45 Cloudflare tests passed; 21 Android tests passed; Importer tests passed; PowerShell tests passed
+- Next context: Acceptance scenarios documentation and final synthesis report
 
 ## Latest Work
-Relaxada a exigência exclusiva de leanback e adicionado suporte a touchscreen no manifesto do Android. Configurado o build padrão via Gradle com flavors `tv` e `gamer`. Integrados `DeviceProfile`, `InputManager` e `RetroArchProvider` ao ciclo de vida e lançamento do `MainActivity`, além do suporte a identificadores canônicos de conteúdo `sha256:`. Alinhado o Importer Windows ao registro canônico de plataformas (`PlatformRegistry.cs`), eliminando a exibição enganosa de suporte a plataformas com pipeline ainda não implementado no desktop.
+Implementado o control plane na API administrativa do Cloudflare Worker com endpoints de grupos de dispositivos (`GET/POST /api/admin/groups`), canais de distribuição de releases (`GET /api/admin/channels` com suporte a canais stable, beta e canary), e atribuição de dispositivos (`POST /api/admin/devices/:deviceId/assign`) permitindo associar aparelhos a grupos, canais e temas.
 
 ## Recent Entries
+- 2026-09-19: Cloud Control Plane (Device groups, Release channels, Assignments) implemented and verified.
 - 2026-09-19: Importer PlatformRegistry, Gradle build flavors, and AndroidManifest relaxed.
 - 2026-09-19: Android Core Abstractions implemented and verified.
 - 2026-09-19: Platform Registry and Compatibility Engine implemented and verified.

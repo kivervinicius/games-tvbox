@@ -312,6 +312,54 @@ export async function adminApi(request, env) {
   if (request.method === 'POST' && url.pathname === '/api/admin/publications') return jsonResponse(await publish(env, await readJson(request)), 201);
   if (request.method === 'POST' && url.pathname === '/api/admin/catalog/items') return createCatalogEntry(env, await readJson(request));
   
+  if (request.method === 'GET' && url.pathname === '/api/admin/groups') {
+    const groups = await getJson(env.DEVICE_KV, 'admin:device_groups', [
+      { id: 'sala', name: 'Sala', profile: 'FIRE_TV' },
+      { id: 'quarto', name: 'Quarto', profile: 'ANDROID_TV' },
+      { id: 'gamer', name: 'Android Gamer', profile: 'ANDROID_GAMER' },
+      { id: 'tablets', name: 'Tablets', profile: 'ANDROID_TABLET' },
+      { id: 'beta', name: 'Beta Testers', profile: 'ALL' }
+    ]);
+    return jsonResponse({ groups });
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/admin/groups') {
+    const body = await readJson(request);
+    const id = String(body.id || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const name = String(body.name || '').trim();
+    if (!id || !name) throw new ApiError(400, 'invalid_group', 'Group id and name are required.');
+    const current = await getJson(env.DEVICE_KV, 'admin:device_groups', []);
+    const updated = [...current.filter(g => g.id !== id), { id, name, profile: body.profile || 'ALL', updatedAt: new Date().toISOString() }];
+    await env.DEVICE_KV.put('admin:device_groups', JSON.stringify(updated));
+    return jsonResponse({ created: true, group: { id, name } }, 201);
+  }
+
+  if (request.method === 'GET' && url.pathname === '/api/admin/channels') {
+    return jsonResponse({
+      channels: [
+        { id: 'stable', name: 'Stable', description: 'Production releases' },
+        { id: 'beta', name: 'Beta', description: 'Early preview releases' },
+        { id: 'canary', name: 'Canary', description: 'Bleeding edge builds' }
+      ]
+    });
+  }
+
+  const assignMatch = url.pathname.match(/^\/api\/admin\/devices\/([a-zA-Z0-9:_-]{3,64})\/assign$/);
+  if (request.method === 'POST' && assignMatch) {
+    const deviceId = assignMatch[1];
+    const body = await readJson(request);
+    const assignmentKey = `device:${deviceId}:assignment`;
+    const assignment = {
+      deviceId,
+      groupId: body.groupId || null,
+      channel: body.channel || 'stable',
+      themeId: body.themeId || null,
+      assignedAt: new Date().toISOString()
+    };
+    await env.DEVICE_KV.put(assignmentKey, JSON.stringify(assignment));
+    return jsonResponse({ assigned: true, ...assignment });
+  }
+
   if (request.method === 'POST' && url.pathname === '/api/admin/reconcile-storage') {
     const storage = await calculateStorage(env.PRIVATE_ASSETS);
     return jsonResponse({ reconciled: true, ...storage });

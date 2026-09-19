@@ -1,5 +1,11 @@
 # Worklog — Games TV Box Gaming Platform
 
+## 2026-09-19 - Implement Cloud Control Plane (Device Groups, Release Channels, Assignments)
+- Spec: DEV/SPECS/ACTIVE.md
+- Changed: Enhanced `cloudflare/worker/src/admin-api.mjs` with device groups endpoints (`GET/POST /api/admin/groups`), release channels endpoint (`GET /api/admin/channels` for stable/beta/canary), and device assignment endpoint (`POST /api/admin/devices/:deviceId/assign`) for targeting group, channel, and theme configurations. Created comprehensive test suite in `cloudflare/tests/admin-control-plane.test.mjs`.
+- Verified: All 45 Cloudflare tests passed (100% success rate across security, coordination, compatibility, and control plane).
+- Next context: Formalizing acceptance scenarios documentation and final report.
+
 ## 2026-09-19 - Align Importer Platform Registry, Build Variants & MainActivity Integration
 - Spec: DEV/SPECS/ACTIVE.md
 - Changed: Updated `AndroidManifest.xml` to make `leanback` and `touchscreen` optional (unblocking phone, tablet, and gamer handheld installation). Created Gradle build system (`settings.gradle`, `build.gradle`, `app/build.gradle`) defining `tv` and `gamer` product flavors with BuildConfig fields. Integrated `DeviceProfile`, `InputManager`, and `RetroArchProvider` (32/64-bit ABI resolution) in `MainActivity.java` and supported canonical `sha256:` contentId downloads. Connected Importer Windows (`PlatformRegistry.cs`, `Form1.cs`, and `JogosRetroImporter.Tests`) to canonical platform registry, enforcing truthful pipeline readiness.

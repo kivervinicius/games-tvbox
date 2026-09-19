@@ -1,6 +1,6 @@
 # Jogos Retro Importer para Windows
 
-O Importer prepara jogos do seu próprio acervo e publica o resultado na biblioteca privada. Ele não move, renomeia nem apaga o arquivo escolhido. Para PlayStation, extrai `.7z`/`.zip`, valida `BIN/CUE`, converte para CHD, executa `chdman verify`, tenta localizar uma capa no projeto Libretro Thumbnails e só publica depois da revisão.
+O Importer prepara jogos do seu próprio acervo e publica o resultado na biblioteca privada. Ele não move, renomeia nem apaga o arquivo escolhido. Para PlayStation, extrai `.7z`/`.zip`/`.rar`, trata `BIN/CUE`, ISO, CHD e `BIN.ECM` (com `unecm.exe` incluído/reparável), converte para CHD, executa `chdman verify`, tenta localizar uma capa no projeto Libretro Thumbnails e só publica depois da revisão.
 
 ## Uso normal
 
